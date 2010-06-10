@@ -34,7 +34,7 @@ my @al2="";
 my %rapport=();
 my %error=();
 my %new=();
-my $goed_allel=0;
+my $correct_allel=0;
 my $different_structures=0;
 open (IN, $ARGV[0]) || die "cannot open reads file\n";#opens the reads file
 open (OUT, ">rapport.txt") || die "cannot open file for writing rapport\n";#opens the output file
@@ -92,7 +92,7 @@ while (<IN>){
 					foreach $teller (keys %{$regular{$ref_start}}){#foreach regular expression
 						if ($al_repeat =~ m/^$regular{$ref_start}{$teller}$/i){#see if pattern is found
 							$reg_found=1;
-							$goed_allel++;
+							$correct_allel++;
 							my $allel="";
 							my $pos=0;
 							foreach $expr (1..$#-) {
@@ -130,23 +130,17 @@ while (<IN>){
 }
 close IN;
 print OUT "aantal reads: $read\n";
-print OUT "geen einde wel begin: $no_end\n";
-print OUT "geen begin wel einde: $no_start\n";
-print OUT "geen begin geen einde: $nothing\n";
-print OUT "verschillende structuren gevonden: $different_structures\n";
-print OUT "nieuw allel: $new_allel\n";
-print OUT "goede allelen: $goed_allel\n";
+print OUT "beginning but no end: $no_end\n";
+print OUT "end but no beginning: $no_start\n";
+print OUT "no beginning no end: $nothing\n";
+print OUT "different structure: $different_structures\n";
+print OUT "new allel: $new_allel\n";
+print OUT "good allels: $correct_allel\n";
 
 print OUT "\n################rapport\n";
 foreach my $structure (sort keys %rapport){
 	foreach my $amount (sort keys %{$rapport{$structure}}){
 		print OUT "$structure\t$rapport{$structure}{$amount}{amount}\t$amount\n";#prints per marker the pattern matching allels with the count
-	}
-}
-print OUT "\n################new\n";
-foreach my $structure (sort keys %new){
-	foreach my $amount (sort keys %{$new{$structure}}){
-		print OUT "$structure\t$new{$structure}{$amount}{amount}\t$amount\n";#prints per marker new allels with the count
 	}
 }
 print OUT "\n################error\n";
@@ -156,6 +150,12 @@ foreach my $structure (sort keys %error){
 	}
 	if ($error{$structure}{noend}){
 		print OUT "no end\t$structure\t$error{$structure}{noend}\n";#prints per marker the count where no end is found
+	}
+}
+print OUT "\n################new\n";
+foreach my $structure (sort keys %new){
+	foreach my $amount (sort keys %{$new{$structure}}){
+		print OUT "$structure\t$new{$structure}{$amount}{amount}\t$amount\n";#prints per marker new allels with the count
 	}
 }
 close OUT;
