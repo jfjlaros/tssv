@@ -34,6 +34,8 @@ my @al2="";
 my %rapport=();
 my %error=();
 my %new=();
+my $goed_allel=0;
+my $different_structures=0;
 open (IN, $ARGV[0]) || die "cannot open reads file\n";#opens the reads file
 open (OUT, ">rapport.txt") || die "cannot open file for writing rapport\n";#opens the output file
 while (<IN>){
@@ -42,25 +44,28 @@ while (<IN>){
 		$read++;
 		if ($sequence ne ""){
 			my %score=();
+			my $found=0;
 			foreach my $structure (keys %hash){
+				if ($structure eq ""){print "|$structure|\n";next;}
 				if (length ($sequence) > length ($hash{$structure}{ref1})){#it is important that the length of the imput sequence is longer than the aligned structure
 					@al1=al($sequence,$hash{$structure}{ref1});#gives the edit distance and position on sequence of ref1
 					$score{$structure}{begin}=$al1[0];
 					$score{$structure}{startpos}=$al1[1];
-				} else {
-					next;
+					$rev_sequence=reverse($sequence);
+					$rev_ref=reverse($hash{$structure}{ref2});
+					@al2=al($rev_sequence,$rev_ref);#gives the edit distance and position from end on sequence of ref2
+					$score{$structure}{end}=$al2[0];
+					$score{$structure}{endpos}=$al2[1];
+					$found=1;
 				}
-				$rev_sequence=reverse($sequence);
-				$rev_ref=reverse($hash{$structure}{ref2});
-				@al2=al($rev_sequence,$rev_ref);#gives the edit distance and position from end on sequence of ref2
-				$score{$structure}{end}=$al2[0];
-				$score{$structure}{endpos}=$al2[1];
 			}
+			if ($found==0){next;}
 			my $smallest_start="";
 			my $smallest_end="";
 			my $ref_start="";
 			my $ref_end="";
 			foreach my $reference (keys %score){#this loop determines the smallest edit distance per read for each marker and saves the marker in ref_start and ref_end
+				if ($reference eq ""){print ":$reference:\n";next;}
 				if ($smallest_start ne ""){
 					if ($score{$reference}{begin}<$smallest_start){
 						$ref_start=$reference;
@@ -132,23 +137,24 @@ print OUT "verschillende structuren gevonden: $different_structures\n";
 print OUT "nieuw allel: $new_allel\n";
 print OUT "goede allelen: $goed_allel\n";
 
-print "\n################rapport\n";
+print OUT "\n################rapport\n";
 foreach my $structure (sort keys %rapport){
 	foreach my $amount (sort keys %{$rapport{$structure}}){
-		print OUT "$structure\t$amount\t$rapport{$structure}{$amount}{amount}\n";#prints per marker the pattern matching allels with the count
+		print OUT "$structure\t$rapport{$structure}{$amount}{amount}\t$amount\n";#prints per marker the pattern matching allels with the count
 	}
 }
-print "\n################new\n";
+print OUT "\n################new\n";
 foreach my $structure (sort keys %new){
 	foreach my $amount (sort keys %{$new{$structure}}){
-		print OUT "$structure\t$amount\t$new{$structure}{$amount}{amount}\n";#prints per marker new allels with the count
+		print OUT "$structure\t$new{$structure}{$amount}{amount}\t$amount\n";#prints per marker new allels with the count
 	}
 }
-print "\n################error\n";
+print OUT "\n################error\n";
 foreach my $structure (sort keys %error){
 	if ($error{$structure}{nostart}){	
 		print OUT "no start\t$structure\t$error{$structure}{nostart}\n";#prints per marker the count where no start is found
-	} elsif ($error{$structure}{noend}){
+	}
+	if ($error{$structure}{noend}){
 		print OUT "no end\t$structure\t$error{$structure}{noend}\n";#prints per marker the count where no end is found
 	}
 }
