@@ -1,0 +1,42 @@
+#created by Jaap van der Heijden, Jeroen Laros
+
+#Copyright 2010 Leiden University Medical Center
+
+
+#This file is part of NGProf.
+#
+#    GAPSS is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    GAPSS is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with NGProf.  If not, see <http://www.gnu.org/licenses/>.
+
+#################################################################################
+
+Requirements:
+Perl
+
+#################################################################################
+
+Installation:
+Place the script in any directory and call it with Perl.
+
+Command Options:
+Perl NGProf.pl -reads file and path (FASTA)- -marker library and path (TXT)- -allowed mismatches for 25nt (2 is recommendend)- -run code (e.g. test)-
+
+#################################################################################
+
+Marker library construction:
+<marker name><tab><downstream flanking sequence><tab><upstream flanking sequence><tab><STR repeat unit(e.g. ATCT)><space><min><space><max><tab><STR repeat unit(e.g. ATCT)><space><min><space><max> etc
+
+example:
+D21S11 reverse	ATCAGTCACGTCATCAG	ACGGTCCGGCCTAACCGTCTCGA	ATCT 2 8 ACG 1 1 CGAG 4 7
+
+#################################################################################

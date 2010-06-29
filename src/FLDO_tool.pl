@@ -4,12 +4,12 @@
 use List::Util qw[min max];
 
 #place the FLDO library in the same directory as the perl script, give the fasta reads file as argument 1, outputs rappor.txt
-if(scalar(@ARGV) != 1){
-	print "Please use the correct parameters\nUsage: FLDO_tool.pl -FLDO reads file-\n";
+if(scalar(@ARGV) != 4){
+	print "Please use the correct parameters\nUsage: FLDO_tool.pl -FLDO reads file- -marker library- -allowed mismatches for 25nt (recommended=2)- -run code-\n";
 	exit();
 }
 
-open (REF, "FLDO_library_simple.txt") || die "cannot open FLDO library\n";#opens the library with markers and repeat patterns
+open (REF, $ARGV[1]) || die "cannot open FLDO library\n";#opens the library with markers and repeat patterns
 my %hash=();
 my %regular=();
 while (<REF>){
@@ -36,8 +36,12 @@ my %error=();
 my %new=();
 my $correct_allel=0;
 my $different_structures=0;
+my $no_end=0;
+my $no_start=0;
+my $new_allel=0;
 open (IN, $ARGV[0]) || die "cannot open reads file\n";#opens the reads file
-open (OUT, ">rapport.txt") || die "cannot open file for writing rapport\n";#opens the output file
+open (OUT, ">rapport_$ARGV[3].txt") || die "cannot open file for writing rapport\n";#opens the output file for writing rapport
+open (OUT2, ">rapport_$ARGV[3]_whole_sequences.fa") || die "cannot open file for writing rapport\n";#opens the output file for whole sequences
 while (<IN>){
 	$_ =~ s/\n|\r//g;
 	if ($_ =~ m/^>/){
@@ -85,7 +89,8 @@ while (<IN>){
 					$ref_end=$reference;
 				}
 			}
-			if ($smallest_start < (length ($hash{$ref_start}{ref1})/15) && $smallest_end < 3){#if the edit distance is small enough for start and end
+			if ($smallest_start <= (length ($hash{$ref_start}{ref1})/25*$ARGV[2]) && $smallest_end <= $ARGV[2]){#if the edit distance is small enough for start and end
+				print OUT2 ">$refstart\n$sequence\n";
 				if ($ref_start eq $ref_end){#and if the same start and end marker is found
 					$al_repeat=substr($sequence,$score{$ref_start}{startpos},(length($sequence)-$score{$ref_start}{endpos}-$score{$ref_start}{startpos}));#substract the repeat
 					my $reg_found=0;
@@ -113,10 +118,10 @@ while (<IN>){
 				} else {
 					$different_structures++;#count when different markers are best in start and end
 				}
-			} elsif ($smallest_start < (length ($hash{$ref_start}{ref1})/15)){#if no end is found
+			} elsif ($smallest_start <= (length ($hash{$ref_start}{ref1})/25*$ARGV[2])){#if no end is found
 				$no_end++;#count total reads with no end marker
 				$error{$ref_start}{noend}++;#store per marker
-			} elsif ($smallest_end < 3){
+			} elsif ($smallest_end <= $ARGV[2]){
 				$no_start++;#count total reads with no start marker
 				$error{$ref_start}{nostart}++;
 			} else {
