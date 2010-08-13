@@ -3,7 +3,6 @@
 #use strict;
 use List::Util qw[min max];
 
-#place the FLDO library in the same directory as the perl script, give the fasta reads file as argument 1, outputs rappor.txt
 if(scalar(@ARGV) != 4){
 	print "Please use the correct parameters\nUsage: FLDO_tool.pl -FLDO reads file- -marker library- -allowed mismatches for 25nt (recommended=2)- -run code-\n";
 	exit();
@@ -39,100 +38,33 @@ my $different_structures=0;
 my $no_end=0;
 my $no_start=0;
 my $new_allel=0;
+mkdir "$ARGV[3]";
 open (IN, $ARGV[0]) || die "cannot open reads file\n";#opens the reads file
-open (OUT, ">rapport_$ARGV[3].txt") || die "cannot open file for writing rapport\n";#opens the output file for writing rapport
-open (OUT2, ">rapport_$ARGV[3]_whole_sequences.fa") || die "cannot open file for writing rapport\n";#opens the output file for whole sequences
+open (OUT, ">$ARGV[3]/rapport.txt") || die "cannot open file for writing rapport\n";#opens the output file for writing rapport
+open (OUT2, ">$ARGV[3]/NoFoundMarker.txt") || die "cannot open file for writing rapport\n";#opens the output file for writing rapport
+open (OUT3, ">$ARGV[3]/DifferentStructures.txt") || die "cannot open file for writing rapport\n";#opens the output file for writing rapport
+foreach $key (keys %hash){
+	mkdir "$ARGV[3]/$key";
+	open ($key."1", ">$ARGV[3]/$key/NoEnd.txt") || die "cannot open file for writing marker $key";
+	open ($key."2", ">$ARGV[3]/$key/NoBeginning.txt") || die "cannot open file for writing marker $key";
+	open ($key."3", ">$ARGV[3]/$key/NewAllele.txt") || die "cannot open file for writing marker $key";
+	open ($key."4", ">$ARGV[3]/$key/GoodAllele.txt") || die "cannot open file for writing marker $key";
+}
+
+$name="";
 while (<IN>){
 	$_ =~ s/\n|\r//g;
 	if ($_ =~ m/^>/){
 		$read++;
-		if ($sequence ne ""){
-			my %score=();
-			my $found=0;
-			foreach my $structure (keys %hash){
-				if ($structure eq ""){print "|$structure|\n";next;}
-				if (length ($sequence) > length ($hash{$structure}{ref1})){#it is important that the length of the imput sequence is longer than the aligned structure
-					@al1=al($sequence,$hash{$structure}{ref1});#gives the edit distance and position on sequence of ref1
-					$score{$structure}{begin}=$al1[0];
-					$score{$structure}{startpos}=$al1[1];
-					$rev_sequence=reverse($sequence);
-					$rev_ref=reverse($hash{$structure}{ref2});
-					@al2=al($rev_sequence,$rev_ref);#gives the edit distance and position from end on sequence of ref2
-					$score{$structure}{end}=$al2[0];
-					$score{$structure}{endpos}=$al2[1];
-					$found=1;
-				}
-			}
-			if ($found==0){next;}
-			my $smallest_start="";
-			my $smallest_end="";
-			my $ref_start="";
-			my $ref_end="";
-			foreach my $reference (keys %score){#this loop determines the smallest edit distance per read for each marker and saves the marker in ref_start and ref_end
-				if ($reference eq ""){print ":$reference:\n";next;}
-				if ($smallest_start ne ""){
-					if ($score{$reference}{begin}<$smallest_start){
-						$ref_start=$reference;
-						$smallest_start=$score{$reference}{begin};
-					}
-				} else {
-					$smallest_start=$score{$reference}{begin};
-					$ref_start=$reference;
-				}
-				if ($smallest_end ne ""){
-					if ($score{$reference}{end}<$smallest_end){
-						$ref_end=$reference;
-						$smallest_end=$score{$reference}{end};
-					}
-				} else {
-					$smallest_end=$score{$reference}{end};
-					$ref_end=$reference;
-				}
-			}
-			if ($smallest_start <= (length ($hash{$ref_start}{ref1})/25*$ARGV[2]) && $smallest_end <= $ARGV[2]){#if the edit distance is small enough for start and end
-				print OUT2 ">$refstart\n$sequence\n";
-				if ($ref_start eq $ref_end){#and if the same start and end marker is found
-					$al_repeat=substr($sequence,$score{$ref_start}{startpos},(length($sequence)-$score{$ref_start}{endpos}-$score{$ref_start}{startpos}));#substract the repeat
-					my $reg_found=0;
-					foreach $teller (keys %{$regular{$ref_start}}){#foreach regular expression
-						if ($al_repeat =~ m/^$regular{$ref_start}{$teller}$/i){#see if pattern is found
-							$reg_found=1;
-							$correct_allel++;
-							my $allel="";
-							my $pos=0;
-							foreach $expr (1..$#-) {
-								if (!defined ${$expr}){next;}
-								$sub_slice=substr($al_repeat,$pos,($+[$expr]-$pos));#determine repeat structure
-								$unit=length($sub_slice)/length(${$expr});
-								$pos=$+[$expr];
-								$allel.=${$expr}."x".$unit."\t";
-							}
-							chop $allel;
-							$rapport{$ref_start}{$allel}{amount}++;#store existing allels
-						}
-					}
-					if ($reg_found==0){
-						$new{$ref_start}{$al_repeat}{amount}++;#store new allels
-						$new_allel++;
-					}
-				} else {
-					$different_structures++;#count when different markers are best in start and end
-				}
-			} elsif ($smallest_start <= (length ($hash{$ref_start}{ref1})/25*$ARGV[2])){#if no end is found
-				$no_end++;#count total reads with no end marker
-				$error{$ref_start}{noend}++;#store per marker
-			} elsif ($smallest_end <= $ARGV[2]){
-				$no_start++;#count total reads with no start marker
-				$error{$ref_start}{nostart}++;
-			} else {
-				$nothing++;#count where no marker is found 
-			}
-		$sequence="";
-		}
+		&profile($sequence,$name);
+		$_ =~ s/>//;
+		$name=$_;
 	} else {
 		$sequence.=$_;#build sequence
 	}
 }
+&profile($sequence);
+
 close IN;
 print OUT "aantal reads: $read\n";
 print OUT "beginning but no end: $no_end\n";
@@ -141,7 +73,6 @@ print OUT "no beginning no end: $nothing\n";
 print OUT "different structure: $different_structures\n";
 print OUT "new allel: $new_allel\n";
 print OUT "good allels: $correct_allel\n";
-
 print OUT "\n################rapport\n";
 foreach my $structure (sort keys %rapport){
 	foreach my $amount (sort keys %{$rapport{$structure}}){
@@ -164,6 +95,102 @@ foreach my $structure (sort keys %new){
 	}
 }
 close OUT;
+
+sub profile {
+	$sequence=$_[0];
+	$name=$_[1];
+	if ($sequence ne ""){
+		my %score=();
+		my $found=0;
+		foreach my $structure (keys %hash){
+			if (length ($sequence) > length ($hash{$structure}{ref1})){#it is important that the length of the imput sequence is longer than the aligned structure
+				@al1=al($sequence,$hash{$structure}{ref1});#gives the edit distance and position on sequence of ref1
+				$score{$structure}{begin}=$al1[0];
+				$score{$structure}{startpos}=$al1[1];
+				$rev_sequence=reverse($sequence);
+				$rev_ref=reverse($hash{$structure}{ref2});
+				@al2=al($rev_sequence,$rev_ref);#gives the edit distance and position from end on sequence of ref2
+				$score{$structure}{end}=$al2[0];
+				$score{$structure}{endpos}=$al2[1];
+				$found=1;
+			}
+		}
+		if ($found==0){next;}
+		my $smallest_start="";
+		my $smallest_end="";
+		my $ref_start="";
+		my $ref_end="";
+		foreach my $reference (keys %score){#this loop determines the smallest edit distance per read for each marker and saves the marker in ref_start and ref_end
+			if ($smallest_start ne ""){
+				if ($score{$reference}{begin}<$smallest_start){
+					$ref_start=$reference;
+					$smallest_start=$score{$reference}{begin};
+				}
+			} else {
+				$smallest_start=$score{$reference}{begin};
+				$ref_start=$reference;
+			}
+			if ($smallest_end ne ""){
+				if ($score{$reference}{end}<$smallest_end){
+					$ref_end=$reference;
+					$smallest_end=$score{$reference}{end};
+				}
+			} else {
+				$smallest_end=$score{$reference}{end};
+				$ref_end=$reference;
+			}
+		}
+		if ($smallest_start <= (length ($hash{$ref_start}{ref1})/25*$ARGV[2]) && $smallest_end <= (length ($hash{$ref_end}{ref2})/25*$ARGV[2])){#if the edit distance is small enough for start and end
+			if ($ref_start eq $ref_end){#and if the same start and end marker is found
+				$al_repeat=substr($sequence,$score{$ref_start}{startpos},(length($sequence)-$score{$ref_start}{endpos}-$score{$ref_start}{startpos}));#substract the repeat
+				my $reg_found=0;
+				foreach $teller (keys %{$regular{$ref_start}}){#foreach regular expression
+					if ($al_repeat =~ m/^$regular{$ref_start}{$teller}$/i){#see if pattern is found
+						$reg_found=1;
+						$correct_allel++;
+						my $allel="";
+						my $pos=0;
+						foreach $expr (1..$#-) {
+							if (!defined ${$expr}){next;}
+							$sub_slice=substr($al_repeat,$pos,($+[$expr]-$pos));#determine repeat structure
+							$unit=length($sub_slice)/length(${$expr});
+							$pos=$+[$expr];
+							$allel.=${$expr}."x".$unit."\t";
+						}
+						chop $allel;
+						$rapport{$ref_start}{$allel}{amount}++;#store existing allels
+						$temp=$ref_start."4";
+						print $temp ">start:$ref_start $smallest_start end:$ref_end $smallest_end name:$name\n$sequence\n";
+					}
+				}
+				if ($reg_found==0){
+					$new{$ref_start}{$al_repeat}{amount}++;#store new allels
+					$new_allel++;
+					$temp=$ref_start."3";
+					print $temp ">start:$ref_start $smallest_start end:$ref_end $smallest_end name:$name\n$sequence\n";
+				}
+			} else {
+				$different_structures++;#count when different markers are best in start and end
+				print OUT3 ">start:$ref_start $smallest_start end:$ref_end $smallest_end name:$name\n$sequence\n";
+			}
+		} elsif ($smallest_start <= (length ($hash{$ref_start}{ref1})/25*$ARGV[2])){#if no end is found
+			$no_end++;#count total reads with no end marker
+			$error{$ref_start}{noend}++;#store per marker
+			$temp=$ref_start."1";
+			print $temp ">start:$ref_start $smallest_start end:$ref_end $smallest_end name:$name\n$sequence\n";
+		} elsif ($smallest_end <= (length ($hash{$ref_end}{ref2})/25*$ARGV[2])){
+			$no_start++;#count total reads with no start marker
+			$error{$ref_end}{nostart}++;
+			$temp=$ref_end."2";
+			print $temp ">start:$ref_start $smallest_start end:$ref_end $smallest_end name:$name\n$sequence\n";
+		} else {
+			$nothing++;#count where no marker is found 
+			print OUT2 ">start:$ref_start $smallest_start end:$ref_end $smallest_end name:$name\n$sequence\n";
+		}
+		$sequence="";
+	}
+}
+
 sub makeMatrix {
   my ($xSize, $ySize) = @_;
 
