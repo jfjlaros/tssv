@@ -12,6 +12,7 @@ open (REF, $ARGV[1]) || die "cannot open FLDO library\n";#opens the library with
 my %hash=();
 my %regular=();
 while (<REF>){
+	if ($_ eq ""){next;}
 	$_ =~ s/\n|\r//g;
 	my @element=split(/\t/,$_);
 	$hash{$element[0]}{ref1}=$element[1];#places start marker in hash under ref1
@@ -38,6 +39,8 @@ my $different_structures=0;
 my $no_end=0;
 my $no_start=0;
 my $new_allel=0;
+my $nothing=0;
+my $too_short=0;
 mkdir "$ARGV[3]";
 open (IN, $ARGV[0]) || die "cannot open reads file\n";#opens the reads file
 open (OUT, ">$ARGV[3]/rapport.txt") || die "cannot open file for writing rapport\n";#opens the output file for writing rapport
@@ -63,7 +66,7 @@ while (<IN>){
 		$sequence.=$_;#build sequence
 	}
 }
-&profile($sequence);
+&profile($sequence,$name);
 
 close IN;
 print OUT "aantal reads: $read\n";
@@ -73,10 +76,13 @@ print OUT "no beginning no end: $nothing\n";
 print OUT "different structure: $different_structures\n";
 print OUT "new allel: $new_allel\n";
 print OUT "good allels: $correct_allel\n";
+print OUT "too short input sequences: $too_short\n"; 
 print OUT "\n################rapport\n";
-foreach my $structure (sort keys %rapport){
-	foreach my $amount (sort keys %{$rapport{$structure}}){
-		print OUT "$structure\t$rapport{$structure}{$amount}{amount}\t$amount\n";#prints per marker the pattern matching allels with the count
+foreach $direction (sort keys %rapport){	
+	foreach my $structure (sort keys %{$rapport{$direction}}){
+		foreach my $amount (sort keys %{$rapport{$direction}{$structure}}){
+			print OUT "$direction\t$structure\t$rapport{$direction}{$structure}{$amount}{amount}\t$amount\n";#prints per marker the pattern matching allels with the count
+		}
 	}
 }
 print OUT "\n################error\n";
@@ -107,15 +113,56 @@ sub profile {
 				@al1=al($sequence,$hash{$structure}{ref1});#gives the edit distance and position on sequence of ref1
 				$score{$structure}{begin}=$al1[0];
 				$score{$structure}{startpos}=$al1[1];
-				$rev_sequence=reverse($sequence);
+				
+				$rev_sequence=reverse($sequence);				
 				$rev_ref=reverse($hash{$structure}{ref2});
 				@al2=al($rev_sequence,$rev_ref);#gives the edit distance and position from end on sequence of ref2
 				$score{$structure}{end}=$al2[0];
 				$score{$structure}{endpos}=$al2[1];
+				
+				@seq=split(//,$sequence);
+				my $temp="";
+				my $revcompl="";
+				for ($k=0;$k<@seq;$k++){
+					if ($seq[$k] eq "A"){$temp.= "T";}
+					elsif ($seq[$k] eq "T"){$temp.= "A";}
+					elsif ($seq[$k] eq "G"){$temp.= "C";}
+					elsif ($seq[$k] eq "C"){$temp.= "G";}
+					$revcompl = reverse $temp;
+				}
+
+				@al1=al($revcompl,$hash{$structure}{ref1});#gives the edit distance and position on rev_compl sequence of ref1
+				$score{$structure}{beginRC}=$al1[0];
+				$score{$structure}{startposRC}=$al1[1];
+				
+				$rev_sequence=reverse($revcompl);				
+				$rev_ref=reverse($hash{$structure}{ref2});
+				@al2=al($rev_sequence,$rev_ref);#gives the edit distance and position from end on rev_compl sequence of ref2
+				$score{$structure}{endRC}=$al2[0];
+				$score{$structure}{endposRC}=$al2[1];
 				$found=1;
+				
+				#the smallest edit distance is selected between forward and reverse-complement sequence
+				if ($score{$structure}{begin} > $score{$structure}{beginRC}){
+					$score{$structure}{begin} = $score{$structure}{beginRC};
+					$score{$structure}{orientation}="rev";
+					$score{$structure}{startpos} = $score{$structure}{startposRC};
+					$sequence=$revcompl;
+				} else {
+					$score{$structure}{orientation}="for";
+				}
+				if ($score{$structure}{end} > $score{$structure}{endRC}){
+					$score{$structure}{end} = $score{$structure}{endRC};
+					$score{$structure}{orientation}="rev";
+					$score{$structure}{endpos} = $score{$structure}{endposRC};
+					$sequence=$revcompl;
+				} else {
+					$score{$structure}{orientation}="for";
+				}
 			}
 		}
-		if ($found==0){next;}
+		
+		if ($found==0){$too_short++;next;}
 		my $smallest_start="";
 		my $smallest_end="";
 		my $ref_start="";
@@ -125,18 +172,22 @@ sub profile {
 				if ($score{$reference}{begin}<$smallest_start){
 					$ref_start=$reference;
 					$smallest_start=$score{$reference}{begin};
+					$orientation=$score{$reference}{orientation};
 				}
 			} else {
 				$smallest_start=$score{$reference}{begin};
+				$orientation=$score{$reference}{orientation};
 				$ref_start=$reference;
 			}
 			if ($smallest_end ne ""){
 				if ($score{$reference}{end}<$smallest_end){
 					$ref_end=$reference;
 					$smallest_end=$score{$reference}{end};
+					$orientation=$score{$reference}{orientation};
 				}
 			} else {
 				$smallest_end=$score{$reference}{end};
+				$orientation=$score{$reference}{orientation};
 				$ref_end=$reference;
 			}
 		}
@@ -158,7 +209,7 @@ sub profile {
 							$allel.=${$expr}."x".$unit."\t";
 						}
 						chop $allel;
-						$rapport{$ref_start}{$allel}{amount}++;#store existing allels
+						$rapport{$orientation}{$ref_start}{$allel}{amount}++;#store existing allels
 						$temp=$ref_start."4";
 						print $temp ">start:$ref_start $smallest_start end:$ref_end $smallest_end name:$name\n$sequence\n";
 					}
