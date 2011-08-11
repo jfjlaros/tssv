@@ -81,7 +81,7 @@ print OUT "\n################rapport\n";
 foreach $direction (sort keys %rapport){	
 	foreach my $structure (sort keys %{$rapport{$direction}}){
 		foreach my $amount (sort keys %{$rapport{$direction}{$structure}}){
-			print OUT "$direction\t$structure\t$rapport{$direction}{$structure}{$amount}{amount}\t$amount\n";#prints per marker the pattern matching allels with the count
+			print OUT "$direction\t$structure\t$rapport{$direction}{$structure}{$amount}{amount}\t$amount\n";#prints per marker the pattern matching allels with the count and orientation
 		}
 	}
 }
@@ -97,7 +97,19 @@ foreach my $structure (sort keys %error){
 print OUT "\n################new\n";
 foreach my $structure (sort keys %new){
 	foreach my $amount (sort keys %{$new{$structure}}){
-		print OUT "$structure\t$new{$structure}{$amount}{amount}\t$amount\n";#prints per marker new allels with the count
+		print OUT "$structure\tFor:";
+		if (exists $new{$structure}{$amount}{amountFor}){
+			print OUT $new{$structure}{$amount}{amountFor}."\t";
+		} else {
+			print OUT "0\t";
+		}
+		print OUT "Rev:";
+		if (exists $new{$structure}{$amount}{amountRev}){
+			print OUT $new{$structure}{$amount}{amountRev}."\t";
+		} else {
+			print OUT "0\t";
+		}
+		print OUT "$new{$structure}{$amount}{amount}\t$amount\n";#prints per marker new allels with the count
 	}
 }
 close OUT;
@@ -167,7 +179,7 @@ sub profile {
 		my $smallest_end="";
 		my $ref_start="";
 		my $ref_end="";
-		foreach my $reference (keys %score){#this loop determines the smallest edit distance per read for each marker and saves the marker in ref_start and ref_end
+		foreach my $reference (keys %score){#this loop determines the smallest edit distance per read for each marker and saves the marker in ref_start
 			if ($smallest_start ne ""){
 				if ($score{$reference}{begin}<$smallest_start){
 					$ref_start=$reference;
@@ -179,8 +191,15 @@ sub profile {
 				$orientation=$score{$reference}{orientation};
 				$ref_start=$reference;
 			}
+		}
+		foreach my $reference (keys %score){#this loop determines the smallest edit distance per read for each marker and saves the marker in ref_end. smallest end marker is saved for smallest start marker.
 			if ($smallest_end ne ""){
 				if ($score{$reference}{end}<$smallest_end){
+					$ref_end=$reference;
+					$smallest_end=$score{$reference}{end};
+					$orientation=$score{$reference}{orientation};
+				}
+				if ($score{$reference}{end}==$smallest_end && $reference eq $ref_start){
 					$ref_end=$reference;
 					$smallest_end=$score{$reference}{end};
 					$orientation=$score{$reference}{orientation};
@@ -211,32 +230,37 @@ sub profile {
 						chop $allel;
 						$rapport{$orientation}{$ref_start}{$allel}{amount}++;#store existing allels
 						$temp=$ref_start."4";
-						print $temp ">start:$ref_start $smallest_start end:$ref_end $smallest_end name:$name\n$sequence\n";
+						print $temp ">start:$ref_start $smallest_start end:$ref_end $smallest_end name:$name orientation:$orientation\n$sequence\n";
 					}
 				}
 				if ($reg_found==0){
 					$new{$ref_start}{$al_repeat}{amount}++;#store new allels
+					if ($orientation eq "for"){
+						$new{$ref_start}{$al_repeat}{amountFor}++;
+					} else {
+						$new{$ref_start}{$al_repeat}{amountRev}++;
+					}
 					$new_allel++;
 					$temp=$ref_start."3";
-					print $temp ">start:$ref_start $smallest_start end:$ref_end $smallest_end name:$name\n$sequence\n";
+					print $temp ">start:$ref_start $smallest_start end:$ref_end $smallest_end name:$name orientation:$orientation\n$sequence\n";
 				}
 			} else {
 				$different_structures++;#count when different markers are best in start and end
-				print OUT3 ">start:$ref_start $smallest_start end:$ref_end $smallest_end name:$name\n$sequence\n";
+				print OUT3 ">start:$ref_start $smallest_start end:$ref_end $smallest_end name:$name orientation:$orientation\n$sequence\n";
 			}
 		} elsif ($smallest_start <= (length ($hash{$ref_start}{ref1})/25*$ARGV[2])){#if no end is found
 			$no_end++;#count total reads with no end marker
 			$error{$ref_start}{noend}++;#store per marker
 			$temp=$ref_start."1";
-			print $temp ">start:$ref_start $smallest_start end:$ref_end $smallest_end name:$name\n$sequence\n";
+			print $temp ">start:$ref_start $smallest_start end:$ref_end $smallest_end name:$name orientation:$orientation\n$sequence\n";
 		} elsif ($smallest_end <= (length ($hash{$ref_end}{ref2})/25*$ARGV[2])){
 			$no_start++;#count total reads with no start marker
 			$error{$ref_end}{nostart}++;
 			$temp=$ref_end."2";
-			print $temp ">start:$ref_start $smallest_start end:$ref_end $smallest_end name:$name\n$sequence\n";
+			print $temp ">start:$ref_start $smallest_start end:$ref_end $smallest_end name:$name orientation:$orientation\n$sequence\n";
 		} else {
 			$nothing++;#count where no marker is found 
-			print OUT2 ">start:$ref_start $smallest_start end:$ref_end $smallest_end name:$name\n$sequence\n";
+			print OUT2 ">start:$ref_start $smallest_start end:$ref_end $smallest_end name:$name orientation:$orientation\n$sequence\n";
 		}
 		$sequence="";
 	}
