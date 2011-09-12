@@ -1,16 +1,77 @@
 #!/usr/local/bin/perl -w
 
+
+=head1 NAME
+	FLDO_tool.pl a module that extracts STR sequences from a fasta file and analyses them.
+
+=head1 SYNOPSIS
+	perl FLDO_tool.pl -FLDO reads file- -marker library- -allowed mismatches for 25nt (recommended=2)- -run code-
+
+=head1 DESCRIPTION
+	NGProf analyses reads in fasta format created by a sequencer. Reads can contain markers that surround a STR.
+	STRs are extracted and analysed by a regular expression.
+
+=head2 METHODS
+	The first step is
+	the identification of the specific STR from the multiplex mixture based on a
+	reference library. The reference library consists of a marker name tag, the
+	upstream flanking sequence adjacent to the STR with a recommended amount of
+	25 basepairs, the downstream flanking sequence and the repeat structure
+	written as a regular expression, an example of the library is:
+	
+	Name \t start_sequence \t end_sequence \t AATA \s 0 \s 15 \s ACTT \s 3 \s 10
+
+	The analysis to be performed with this
+	library is automated for forward and reverse reads by also interpreting the sequences 
+	as its reverse complement. For each read four semi-global alignments 
+	are done with each pair of the flanking sequences from the library. 
+	The aligner determines the position of the first occurrence with
+	the minimum edit distance of all substrings from
+	the read and STR marker sequence. The aligner gives the right most coordinate
+	on the read pointing to the start of the STR. The starting position of the
+	second marker is found in the same way by reversing both the marker and the
+	read. After the minimum edit distance is determined for all markers in the
+	library, the minimum number is calculated for up- and downstream flanking
+	sequences separately. The maximum number of mismatches, insertions and
+	deletions allowed can be set in this analysis and is used to reject marker
+	pairs with too many differences. In general we recommended 2 mismatches per
+	25 nucleotides. A report per marker is made about the number of reads where
+	one or two of the flanking markers is not recognized. After forward and reverse
+	marker positions are identified the STR can be extracted from the read. STRs
+	are further analyzed using the given regular expression. NGProf outputs the
+	repetitive blocks of sequences clarifying the (complex) structure. STR's that
+	don't match the regular expression are counted and returned as potential new
+	alleles including their sequence and orientation, so they can be used to identify 
+	previously unknown repeat structures. To identify SNPs and indels 
+	in marker sequences an extra tool is available in the download section.
+	This tool uses the now known repeat structure plus a few basepairs of marker 
+	sequence to do a search in the fasta file with a regular expression. 
+	Sequences in the file are returned including their marker sequence so markers
+	can be searched for SNPs and indels.
+
+=head1 LICENSE
+
+This software is available under GNU public license
+
+=head1 AUTHOR
+
+J.W.F. van der Heijden, K.J. van der Graag, J.F.J. Laros.
+
+=cut
+
+
 #use strict;
 use List::Util qw[min max];
 
-if(scalar(@ARGV) != 4){
+if(scalar(@ARGV) != 4){#check for the amount of parameters in the command code
 	print "Please use the correct parameters\nUsage: FLDO_tool.pl -FLDO reads file- -marker library- -allowed mismatches for 25nt (recommended=2)- -run code-\n";
 	exit();
 }
 
-open (REF, $ARGV[1]) || die "cannot open FLDO library\n";#opens the library with markers and repeat patterns
-my %hash=();
-my %regular=();
+#Example library: Name \t start_sequence \t end_sequence \t AATA \s 0 \s 15 \s ACTT \s 3 \s 10
+open (REF, $ARGV[1]) || die "cannot open library\n";#opens the library with markers and repeat patterns
+my %hash=();#the hash in which marker sequences are stored
+my %regular=();#the hash in which the regular expression is stored. 
 while (<REF>){
 	if ($_ eq ""){next;}
 	$_ =~ s/\n|\r//g;
@@ -21,97 +82,74 @@ while (<REF>){
 		@repeat_structure=split(/ /,$element[$i]);
 		my $reg="";
 		for (my $j=0;$j<@repeat_structure;$j+=3){
-			$reg.="($repeat_structure[$j]){".$repeat_structure[($j+1)].",".$repeat_structure[($j+2)]."}";#builds regular expression for use in pattern detection
+			$reg.="($repeat_structure[$j]){".$repeat_structure[($j+1)].",".$repeat_structure[($j+2)]."}";#builds regular expression for use in pattern matching
 		}
 		$regular{$element[0]}{$i}=$reg;#stores the regular expression in "regular"
 	}
 }
 close REF;
-my $read=0;
-my $sequence="";
-my @al1="";
-my @al2="";
-my %rapport=();
+my $read=0;#counts the total reads
+my $sequence="";#current analysed sequence
+my @al1="";#storage for edit distances
+my @al2="";#storage for edit distances
+my %report=();#storage for output
 my %error=();
 my %new=();
-my $correct_allel=0;
+my $correct_allel=0;#variables for encountering possibilities in reads
 my $different_structures=0;
+my $different_orientation=0;
 my $no_end=0;
 my $no_start=0;
 my $new_allel=0;
 my $nothing=0;
 my $too_short=0;
+my $temporal="";#for switching between forward and reverse
 mkdir "$ARGV[3]";
 open (IN, $ARGV[0]) || die "cannot open reads file\n";#opens the reads file
-open (OUT, ">$ARGV[3]/rapport.txt") || die "cannot open file for writing rapport\n";#opens the output file for writing rapport
-open (OUT2, ">$ARGV[3]/NoFoundMarker.txt") || die "cannot open file for writing rapport\n";#opens the output file for writing rapport
-open (OUT3, ">$ARGV[3]/DifferentStructures.txt") || die "cannot open file for writing rapport\n";#opens the output file for writing rapport
+open (OUT, ">$ARGV[3]/report.txt") || die "cannot open file for writing report\n";#opens the output file for writing report
+open (OUT2, ">$ARGV[3]/NoFoundMarker.txt") || die "cannot open file for writing report\n";#opens the output file for writing report
+open (OUT3, ">$ARGV[3]/DifferentStructures.txt") || die "cannot open file for writing report\n";#opens the output file for writing report
 foreach $key (keys %hash){
 	mkdir "$ARGV[3]/$key";
 	open ($key."1", ">$ARGV[3]/$key/NoEnd.txt") || die "cannot open file for writing marker $key";
 	open ($key."2", ">$ARGV[3]/$key/NoBeginning.txt") || die "cannot open file for writing marker $key";
 	open ($key."3", ">$ARGV[3]/$key/NewAllele.txt") || die "cannot open file for writing marker $key";
 	open ($key."4", ">$ARGV[3]/$key/GoodAllele.txt") || die "cannot open file for writing marker $key";
+	open ($key."5", ">$ARGV[3]/$key/DifferentOrientation.txt") || die "cannot open file for writing marker $key";
 }
 
+#The while loop below reads through the fasta file.
 $name="";
 while (<IN>){
 	$_ =~ s/\n|\r//g;
 	if ($_ =~ m/^>/){
-		$read++;
-		&profile($sequence,$name);
+		$read++;#count reads
+		&profile($sequence,$name);#the profiling subroutine
 		$_ =~ s/>//;
-		$name=$_;
+		$name=$_;#read id
 	} else {
 		$sequence.=$_;#build sequence
 	}
 }
-&profile($sequence,$name);
+&profile($sequence,$name);#again the subroutine for last read
 
 close IN;
-print OUT "aantal reads: $read\n";
+print OUT "total reads: $read\n";#now all variables and hashes can be printed
 print OUT "beginning but no end: $no_end\n";
 print OUT "end but no beginning: $no_start\n";
 print OUT "no beginning no end: $nothing\n";
-print OUT "different structure: $different_structures\n";
-print OUT "new allel: $new_allel\n";
+print OUT "different structures: $different_structures\n";
+print OUT "different orientations: $different_orientation\n";
+print OUT "new allels: $new_allel\n";
 print OUT "good allels: $correct_allel\n";
 print OUT "too short input sequences: $too_short\n"; 
-print OUT "\n################rapport\n";
-foreach $direction (sort keys %rapport){	
-	foreach my $structure (sort keys %{$rapport{$direction}}){
-		foreach my $amount (sort keys %{$rapport{$direction}{$structure}}){
-			print OUT "$direction\t$structure\t$rapport{$direction}{$structure}{$amount}{amount}\t$amount\n";#prints per marker the pattern matching allels with the count and orientation
-		}
-	}
-}
+print OUT "\n################report\n";
+&print_double(\%report);
 print OUT "\n################error\n";
-foreach my $structure (sort keys %error){
-	if ($error{$structure}{nostart}){	
-		print OUT "no start\t$structure\t$error{$structure}{nostart}\n";#prints per marker the count where no start is found
-	}
-	if ($error{$structure}{noend}){
-		print OUT "no end\t$structure\t$error{$structure}{noend}\n";#prints per marker the count where no end is found
-	}
-}
+&print_single(\%error_end, "no end");
+&print_single(\%error_start, "no start");
 print OUT "\n################new\n";
-foreach my $structure (sort keys %new){
-	foreach my $amount (sort keys %{$new{$structure}}){
-		print OUT "$structure\tFor:";
-		if (exists $new{$structure}{$amount}{amountFor}){
-			print OUT $new{$structure}{$amount}{amountFor}."\t";
-		} else {
-			print OUT "0\t";
-		}
-		print OUT "Rev:";
-		if (exists $new{$structure}{$amount}{amountRev}){
-			print OUT $new{$structure}{$amount}{amountRev}."\t";
-		} else {
-			print OUT "0\t";
-		}
-		print OUT "$new{$structure}{$amount}{amount}\t$amount\n";#prints per marker new allels with the count
-	}
-}
+&print_double(\%new);
 close OUT;
 
 sub profile {
@@ -121,7 +159,8 @@ sub profile {
 		my %score=();
 		my $found=0;
 		foreach my $structure (keys %hash){
-			if (length ($sequence) > length ($hash{$structure}{ref1})){#it is important that the length of the imput sequence is longer than the aligned structure
+			if (length ($sequence) > length ($hash{$structure}{ref1})){#it is important that the length of the input sequence is longer than the aligned structure	
+				#&align_all($sequence, \%hash, $structure, \%score);			
 				@al1=al($sequence,$hash{$structure}{ref1});#gives the edit distance and position on sequence of ref1
 				$score{$structure}{begin}=$al1[0];
 				$score{$structure}{startpos}=$al1[1];
@@ -132,16 +171,8 @@ sub profile {
 				$score{$structure}{end}=$al2[0];
 				$score{$structure}{endpos}=$al2[1];
 				
-				@seq=split(//,$sequence);
-				my $temp="";
-				my $revcompl="";
-				for ($k=0;$k<@seq;$k++){
-					if ($seq[$k] eq "A"){$temp.= "T";}
-					elsif ($seq[$k] eq "T"){$temp.= "A";}
-					elsif ($seq[$k] eq "G"){$temp.= "C";}
-					elsif ($seq[$k] eq "C"){$temp.= "G";}
-					$revcompl = reverse $temp;
-				}
+				#The sequence is converted to the reverse complement
+				$revcompl = complement($sequence);
 
 				@al1=al($revcompl,$hash{$structure}{ref1});#gives the edit distance and position on rev_compl sequence of ref1
 				$score{$structure}{beginRC}=$al1[0];
@@ -153,116 +184,224 @@ sub profile {
 				$score{$structure}{endRC}=$al2[0];
 				$score{$structure}{endposRC}=$al2[1];
 				$found=1;
-				
 				#the smallest edit distance is selected between forward and reverse-complement sequence
-				if ($score{$structure}{begin} > $score{$structure}{beginRC}){
-					$score{$structure}{begin} = $score{$structure}{beginRC};
-					$score{$structure}{orientation}="rev";
-					$score{$structure}{startpos} = $score{$structure}{startposRC};
-					$sequence=$revcompl;
-				} else {
-					$score{$structure}{orientation}="for";
-				}
-				if ($score{$structure}{end} > $score{$structure}{endRC}){
-					$score{$structure}{end} = $score{$structure}{endRC};
-					$score{$structure}{orientation}="rev";
-					$score{$structure}{endpos} = $score{$structure}{endposRC};
-					$sequence=$revcompl;
-				} else {
-					$score{$structure}{orientation}="for";
-				}
+				&select_orientation(\%score,"begin", "startpos", "orientation", $structure);
+				&select_orientation(\%score,"end", "endpos", "orientationend", $structure);				
 			}
 		}
-		
 		if ($found==0){$too_short++;next;}
-		my $smallest_start="";
-		my $smallest_end="";
-		my $ref_start="";
-		my $ref_end="";
-		foreach my $reference (keys %score){#this loop determines the smallest edit distance per read for each marker and saves the marker in ref_start
-			if ($smallest_start ne ""){
-				if ($score{$reference}{begin}<$smallest_start){
-					$ref_start=$reference;
-					$smallest_start=$score{$reference}{begin};
-					$orientation=$score{$reference}{orientation};
-				}
-			} else {
-				$smallest_start=$score{$reference}{begin};
-				$orientation=$score{$reference}{orientation};
-				$ref_start=$reference;
-			}
-		}
-		foreach my $reference (keys %score){#this loop determines the smallest edit distance per read for each marker and saves the marker in ref_end. smallest end marker is saved for smallest start marker.
-			if ($smallest_end ne ""){
-				if ($score{$reference}{end}<$smallest_end){
-					$ref_end=$reference;
-					$smallest_end=$score{$reference}{end};
-					$orientation=$score{$reference}{orientation};
-				}
-				if ($score{$reference}{end}==$smallest_end && $reference eq $ref_start){
-					$ref_end=$reference;
-					$smallest_end=$score{$reference}{end};
-					$orientation=$score{$reference}{orientation};
-				}
-			} else {
-				$smallest_end=$score{$reference}{end};
-				$orientation=$score{$reference}{orientation};
-				$ref_end=$reference;
-			}
-		}
+		
+		(my $ref_start,my $smallest_start) = &sort_smallest(\%score,"begin");	
+		(my $ref_end,my $smallest_end) = &sort_smallest(\%score,"end",$ref_start);
+		
+		#print $ref_end."\n".$score{$ref_end}{orientationend}."\n";
 		if ($smallest_start <= (length ($hash{$ref_start}{ref1})/25*$ARGV[2]) && $smallest_end <= (length ($hash{$ref_end}{ref2})/25*$ARGV[2])){#if the edit distance is small enough for start and end
 			if ($ref_start eq $ref_end){#and if the same start and end marker is found
-				$al_repeat=substr($sequence,$score{$ref_start}{startpos},(length($sequence)-$score{$ref_start}{endpos}-$score{$ref_start}{startpos}));#substract the repeat
-				my $reg_found=0;
-				foreach $teller (keys %{$regular{$ref_start}}){#foreach regular expression
-					if ($al_repeat =~ m/^$regular{$ref_start}{$teller}$/i){#see if pattern is found
-						$reg_found=1;
-						$correct_allel++;
-						my $allel="";
-						my $pos=0;
-						foreach $expr (1..$#-) {
-							if (!defined ${$expr}){next;}
-							$sub_slice=substr($al_repeat,$pos,($+[$expr]-$pos));#determine repeat structure
-							$unit=length($sub_slice)/length(${$expr});
-							$pos=$+[$expr];
-							$allel.=${$expr}."x".$unit."\t";
+				if ($score{$ref_start}{orientation} eq $score{$ref_end}{orientationend}){#in the same orientation
+					if ($score{$ref_start}{orientation} eq "rev"){$temporal=$revcompl;}else{$temporal=$sequence;}
+					$al_repeat=substr($temporal,$score{$ref_start}{startpos},(length($temporal)-$score{$ref_start}{endpos}-$score{$ref_start}{startpos}));#substract the repeat
+					my $reg_found=0;
+					foreach $teller (keys %{$regular{$ref_start}}){#foreach regular expression
+						if ($al_repeat =~ m/^$regular{$ref_start}{$teller}$/i){#see if pattern is found
+							$reg_found=1;
+							$correct_allel++;
+							my $allel="";
+							my $pos=0;
+							foreach $expr (1..$#-) {
+								if (!defined ${$expr}){next;}
+								$sub_slice=substr($al_repeat,$pos,($+[$expr]-$pos));#determine repeat structure
+								$unit=length($sub_slice)/length(${$expr});
+								$pos=$+[$expr];
+								$allel.=${$expr}."x".$unit."\t";
+							}
+							chop $allel;
+					#&count_orientation_allel(\%report, \%score, $ref_start, $allel);						
+							$report{$ref_start}{$allel}{amount}++;#store good allels with orientation and structure
+							if ($score{$ref_start}{orientation} eq "for"){
+								$report{$ref_start}{$allel}{amountFor}++;
+							} else {
+								$report{$ref_start}{$allel}{amountRev}++;
+							}
+
+
+							$temp=$ref_start."4";
+							print $temp ">start:$ref_start $smallest_start end:$ref_end $smallest_end name:$name orientation:$score{$ref_start}{orientation}\n$sequence\n";
 						}
-						chop $allel;
-						$rapport{$orientation}{$ref_start}{$allel}{amount}++;#store existing allels
-						$temp=$ref_start."4";
-						print $temp ">start:$ref_start $smallest_start end:$ref_end $smallest_end name:$name orientation:$orientation\n$sequence\n";
 					}
-				}
-				if ($reg_found==0){
-					$new{$ref_start}{$al_repeat}{amount}++;#store new allels
-					if ($orientation eq "for"){
-						$new{$ref_start}{$al_repeat}{amountFor}++;
-					} else {
-						$new{$ref_start}{$al_repeat}{amountRev}++;
+					if ($reg_found==0){
+						#&count_orientation_allel(\%new, \%score, $ref_start, $al_repeat);
+						$new{$ref_start}{$al_repeat}{amount}++;#store new allels with orientation
+						if ($score{$ref_start}{orientation} eq "for"){
+							$new{$ref_start}{$al_repeat}{amountFor}++;
+						} else {
+							$new{$ref_start}{$al_repeat}{amountRev}++;
+						}
+						$new_allel++;
+						$temp=$ref_start."3";
+						print $temp ">start:$ref_start $smallest_start end:$ref_end $smallest_end name:$name orientation:$score{$ref_start}{orientation}\n$sequence\n";
 					}
-					$new_allel++;
-					$temp=$ref_start."3";
-					print $temp ">start:$ref_start $smallest_start end:$ref_end $smallest_end name:$name orientation:$orientation\n$sequence\n";
+				} else {
+					$different_orientation++;#count when different orientations are found
+					$temp=$ref_start."5";
+					#print $temp."\n";
+					print $temp ">start:$ref_start $smallest_start end:$ref_end $smallest_end name:$name\n$sequence\n";
 				}
 			} else {
 				$different_structures++;#count when different markers are best in start and end
-				print OUT3 ">start:$ref_start $smallest_start end:$ref_end $smallest_end name:$name orientation:$orientation\n$sequence\n";
+				print OUT3 ">start:$ref_start $smallest_start end:$ref_end $smallest_end name:$name orientation:$score{$ref_start}{orientation}\n$sequence\n";
 			}
 		} elsif ($smallest_start <= (length ($hash{$ref_start}{ref1})/25*$ARGV[2])){#if no end is found
 			$no_end++;#count total reads with no end marker
-			$error{$ref_start}{noend}++;#store per marker
+			&count_orientation (\%error_end, \%score, $ref_start);			
 			$temp=$ref_start."1";
-			print $temp ">start:$ref_start $smallest_start end:$ref_end $smallest_end name:$name orientation:$orientation\n$sequence\n";
+			print $temp ">start:$ref_start $smallest_start end:$ref_end $smallest_end name:$name orientation:$score{$ref_start}{orientation}\n$sequence\n";
 		} elsif ($smallest_end <= (length ($hash{$ref_end}{ref2})/25*$ARGV[2])){
 			$no_start++;#count total reads with no start marker
-			$error{$ref_end}{nostart}++;
+			&count_orientation (\%error_start, \%score, $ref_end);
 			$temp=$ref_end."2";
-			print $temp ">start:$ref_start $smallest_start end:$ref_end $smallest_end name:$name orientation:$orientation\n$sequence\n";
+			print $temp ">start:$ref_start $smallest_start end:$ref_end $smallest_end name:$name orientation:$score{$ref_end}{orientationend}\n$sequence\n";
 		} else {
 			$nothing++;#count where no marker is found 
-			print OUT2 ">start:$ref_start $smallest_start end:$ref_end $smallest_end name:$name orientation:$orientation\n$sequence\n";
+			print OUT2 ">start:$ref_start $smallest_start end:$ref_end $smallest_end name:$name\n$sequence\n";
 		}
 		$sequence="";
+	}
+}
+
+sub align_all{
+	my $seq=shift;
+	my %hash=%{(shift)};
+	my $structure=shift;
+	my %score=%{(shift)};
+	print "$seq, $hash{$structure}{ref1}\n";
+	@al1=al($seq,$hash{$structure}{ref1});#gives the edit distance and position on sequence of ref1
+	$score{$structure}{begin}=$al1[0];
+	$score{$structure}{startpos}=$al1[1];
+	my $rev_sequence=reverse($seq);				
+	my $rev_ref=reverse($hash{$structure}{ref2});
+	@al2=al($rev_sequence,$rev_ref);#gives the edit distance and position from end on sequence of ref2
+	$score{$structure}{end}=$al2[0];
+	$score{$structure}{endpos}=$al2[1];
+}
+
+sub count_orientation_allel{
+	my %x=%{(shift)};
+	my %y=%{(shift)};
+	my $ref=shift;
+	my $subject=shift;
+	$x{$ref}{$subject}{amount}++;#store good allels with orientation and structure
+	if ($y{$ref}{orientation} eq "for"){
+		$x{$ref}{$subject}{amountFor}++;
+	} else {
+		$x{$ref}{$subject}{amountRev}++;
+	}
+}
+
+sub count_orientation{
+	my %x=%{(shift)};
+	my %y=%{(shift)};
+	my $ref=shift;
+	$x{$ref}{amount}++;#store new allels with orientation
+	if ($y{$ref}{orientation} eq "for"){
+		$x{$ref}{amountFor}++;
+	} else {
+		$x{$ref}{amountRev}++;
+	}
+}
+sub select_orientation{
+	my %x=%{(shift)};
+	my $label1=shift;
+	my $label1RC=$label1."RC";
+	my $label2=shift;
+	my $label2RC=$label2."RC";
+	my $label3=shift;
+	
+	my $y=shift;
+	if ($x{$y}{$label1} > $x{$y}{$label1RC}){
+		$x{$y}{$label1} = $x{$y}{$label1RC};
+		$x{$y}{$label3}="rev";
+		$x{$y}{$label2} = $x{$y}{$label2RC};
+	} else {
+		$x{$y}{$label3}="for";
+	}
+}
+
+sub sort_smallest{#this subroutine sorts out the smallest number in a hash and gives the key with it.
+	my %x=%{(shift)};
+	my $label=shift;
+	my $start=shift;
+	my $smallest="";
+	foreach my $reference (keys %x){
+		if ($smallest ne ""){
+			if ($x{$reference}{$label}<$smallest){
+				$ref=$reference;
+				$smallest=$x{$reference}{$label};
+			}
+			if ($label eq "end" && $x{$reference}{$label}==$smallest && $reference eq $start){
+				$ref=$reference;
+				$smallest=$x{$reference}{$label};
+			}
+		} else {
+			$smallest=$x{$reference}{$label};
+			$ref=$reference;
+		}
+	}
+	return ($ref, $smallest);
+}
+
+sub complement {#this subroutine determines the reverse complement of the sequence
+	my $x=shift;	
+	@seq=split(//,$x);
+	my $temp="";
+	my $revcompl="";
+	for ($k=0;$k<@seq;$k++){
+		if ($seq[$k] eq "A"){$temp.= "T";}
+		elsif ($seq[$k] eq "T"){$temp.= "A";}
+		elsif ($seq[$k] eq "G"){$temp.= "C";}
+		elsif ($seq[$k] eq "C"){$temp.= "G";}
+	}
+	$revcompl = reverse $temp;
+	return ($revcompl);
+}
+
+sub print_double {#this subroutine does the printing for the report and the new hashes.
+	my %hash = %{(shift)};
+	foreach my $structure (sort keys %hash){
+		foreach my $allel (sort keys %{$hash{$structure}}){
+			print OUT "$structure\tFor:";
+			if (exists $hash{$structure}{$allel}{amountFor}){
+				print OUT $hash{$structure}{$allel}{amountFor}."\t";
+			} else {
+				print OUT "0\t";
+			}
+			print OUT "Rev:";
+			if (exists $hash{$structure}{$allel}{amountRev}){
+				print OUT $hash{$structure}{$allel}{amountRev}."\t";
+			} else {
+				print OUT "0\t";
+			}
+			print OUT "$hash{$structure}{$allel}{amount}\t$allel\n";#prints per marker new allels or good allels with the count
+		}
+	}
+}
+
+sub print_single {#this subroutine does the printing for the error hash
+	my(%hash) = %{(shift)};
+	my $label = shift;
+	foreach my $structure (sort keys %hash){
+		print OUT $label.": $structure\tFor:";
+		if (exists $hash{$structure}{amountFor}){
+			print OUT $hash{$structure}{amountFor}."\t";
+		} else {
+			print OUT "0\t";
+		}
+		print OUT "Rev:";
+		if (exists $hash{$structure}{amountRev}){
+			print OUT $hash{$structure}{amountRev}."\t";
+		} else {
+			print OUT "0\t";
+		}
+		print OUT "$hash{$structure}{amount}\n";#prints per marker new allels with the count
 	}
 }
 
