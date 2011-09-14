@@ -160,16 +160,16 @@ sub profile {
 		my $found=0;
 		foreach my $structure (keys %hash){
 			if (length ($sequence) > length ($hash{$structure}{ref1})){#it is important that the length of the input sequence is longer than the aligned structure	
-				#&align_all($sequence, \%hash, $structure, \%score);			
-				@al1=al($sequence,$hash{$structure}{ref1});#gives the edit distance and position on sequence of ref1
-				$score{$structure}{begin}=$al1[0];
-				$score{$structure}{startpos}=$al1[1];
+				&align_all($sequence, \%hash, $structure, \%score);			
+				#@al1=al($sequence,$hash{$structure}{ref1});#gives the edit distance and position on sequence of ref1
+				#$score{$structure}{begin}=$al1[0];
+				#$score{$structure}{startpos}=$al1[1];
 				
-				$rev_sequence=reverse($sequence);				
-				$rev_ref=reverse($hash{$structure}{ref2});
-				@al2=al($rev_sequence,$rev_ref);#gives the edit distance and position from end on sequence of ref2
-				$score{$structure}{end}=$al2[0];
-				$score{$structure}{endpos}=$al2[1];
+				#$rev_sequence=reverse($sequence);				
+				#$rev_ref=reverse($hash{$structure}{ref2});
+				#@al2=al($rev_sequence,$rev_ref);#gives the edit distance and position from end on sequence of ref2
+				#$score{$structure}{end}=$al2[0];
+				#$score{$structure}{endpos}=$al2[1];
 				
 				#The sequence is converted to the reverse complement
 				$revcompl = complement($sequence);
@@ -273,7 +273,7 @@ sub align_all{
 	my %hash=%{(shift)};
 	my $structure=shift;
 	my %score=%{(shift)};
-	print "$seq, $hash{$structure}{ref1}\n";
+	#print "$seq, $hash{$structure}{ref1}\n";
 	@al1=al($seq,$hash{$structure}{ref1});#gives the edit distance and position on sequence of ref1
 	$score{$structure}{begin}=$al1[0];
 	$score{$structure}{startpos}=$al1[1];
