@@ -160,16 +160,16 @@ sub profile {
 		my $found=0;
 		foreach my $structure (keys %hash){
 			if (length ($sequence) > length ($hash{$structure}{ref1})){#it is important that the length of the input sequence is longer than the aligned structure	
-				&align_all($sequence, \%hash, $structure, \%score);			
-				#@al1=al($sequence,$hash{$structure}{ref1});#gives the edit distance and position on sequence of ref1
-				#$score{$structure}{begin}=$al1[0];
-				#$score{$structure}{startpos}=$al1[1];
+				#&align_all($sequence, \%hash, $structure, \%score);			
+				@al1=al($sequence,$hash{$structure}{ref1});#gives the edit distance and position on sequence of ref1
+				$score{$structure}{begin}=$al1[0];
+				$score{$structure}{startpos}=$al1[1];
 				
-				#$rev_sequence=reverse($sequence);				
-				#$rev_ref=reverse($hash{$structure}{ref2});
-				#@al2=al($rev_sequence,$rev_ref);#gives the edit distance and position from end on sequence of ref2
-				#$score{$structure}{end}=$al2[0];
-				#$score{$structure}{endpos}=$al2[1];
+				$rev_sequence=reverse($sequence);				
+				$rev_ref=reverse($hash{$structure}{ref2});
+				@al2=al($rev_sequence,$rev_ref);#gives the edit distance and position from end on sequence of ref2
+				$score{$structure}{end}=$al2[0];
+				$score{$structure}{endpos}=$al2[1];
 				
 				#The sequence is converted to the reverse complement
 				$revcompl = complement($sequence);
@@ -194,11 +194,11 @@ sub profile {
 		(my $ref_start,my $smallest_start) = &sort_smallest(\%score,"begin");	
 		(my $ref_end,my $smallest_end) = &sort_smallest(\%score,"end",$ref_start);
 		
+		if ($score{$ref_start}{orientation} eq "rev"){$temporal=$revcompl;}else{$temporal=$sequence;}
 		#print $ref_end."\n".$score{$ref_end}{orientationend}."\n";
 		if ($smallest_start <= (length ($hash{$ref_start}{ref1})/25*$ARGV[2]) && $smallest_end <= (length ($hash{$ref_end}{ref2})/25*$ARGV[2])){#if the edit distance is small enough for start and end
 			if ($ref_start eq $ref_end){#and if the same start and end marker is found
 				if ($score{$ref_start}{orientation} eq $score{$ref_end}{orientationend}){#in the same orientation
-					if ($score{$ref_start}{orientation} eq "rev"){$temporal=$revcompl;}else{$temporal=$sequence;}
 					$al_repeat=substr($temporal,$score{$ref_start}{startpos},(length($temporal)-$score{$ref_start}{endpos}-$score{$ref_start}{startpos}));#substract the repeat
 					my $reg_found=0;
 					foreach $teller (keys %{$regular{$ref_start}}){#foreach regular expression
@@ -225,10 +225,11 @@ sub profile {
 
 
 							$temp=$ref_start."4";
-							print $temp ">start:$ref_start $smallest_start end:$ref_end $smallest_end name:$name orientation:$score{$ref_start}{orientation}\n$sequence\n";
+							print $temp ">start:$ref_start $smallest_start end:$ref_end $smallest_end name:$name orientation:$score{$ref_start}{orientation}\n$temporal\n";
 						}
 					}
 					if ($reg_found==0){
+						#print3dArray(\%new);
 						#&count_orientation_allel(\%new, \%score, $ref_start, $al_repeat);
 						$new{$ref_start}{$al_repeat}{amount}++;#store new allels with orientation
 						if ($score{$ref_start}{orientation} eq "for"){
@@ -237,8 +238,9 @@ sub profile {
 							$new{$ref_start}{$al_repeat}{amountRev}++;
 						}
 						$new_allel++;
+						#print3dArray(\%new);
 						$temp=$ref_start."3";
-						print $temp ">start:$ref_start $smallest_start end:$ref_end $smallest_end name:$name orientation:$score{$ref_start}{orientation}\n$sequence\n";
+						print $temp ">start:$ref_start $smallest_start end:$ref_end $smallest_end name:$name orientation:$score{$ref_start}{orientation}\n$temporal\n";
 					}
 				} else {
 					$different_orientation++;#count when different orientations are found
@@ -248,21 +250,21 @@ sub profile {
 				}
 			} else {
 				$different_structures++;#count when different markers are best in start and end
-				print OUT3 ">start:$ref_start $smallest_start end:$ref_end $smallest_end name:$name orientation:$score{$ref_start}{orientation}\n$sequence\n";
+				print OUT3 ">start:$ref_start $smallest_start end:$ref_end $smallest_end name:$name orientation:$score{$ref_start}{orientation}\n$temporal\n";
 			}
 		} elsif ($smallest_start <= (length ($hash{$ref_start}{ref1})/25*$ARGV[2])){#if no end is found
 			$no_end++;#count total reads with no end marker
 			&count_orientation (\%error_end, \%score, $ref_start);			
 			$temp=$ref_start."1";
-			print $temp ">start:$ref_start $smallest_start end:$ref_end $smallest_end name:$name orientation:$score{$ref_start}{orientation}\n$sequence\n";
+			print $temp ">start:$ref_start $smallest_start end:$ref_end $smallest_end name:$name orientation:$score{$ref_start}{orientation}\n$temporal\n";
 		} elsif ($smallest_end <= (length ($hash{$ref_end}{ref2})/25*$ARGV[2])){
 			$no_start++;#count total reads with no start marker
 			&count_orientation (\%error_start, \%score, $ref_end);
 			$temp=$ref_end."2";
-			print $temp ">start:$ref_start $smallest_start end:$ref_end $smallest_end name:$name orientation:$score{$ref_end}{orientationend}\n$sequence\n";
+			print $temp ">start:$ref_start $smallest_start end:$ref_end $smallest_end name:$name orientation:$score{$ref_end}{orientationend}\n$temporal\n";
 		} else {
 			$nothing++;#count where no marker is found 
-			print OUT2 ">start:$ref_start $smallest_start end:$ref_end $smallest_end name:$name\n$sequence\n";
+			print OUT2 ">start:$ref_start $smallest_start end:$ref_end $smallest_end name:$name\n$temporal\n";
 		}
 		$sequence="";
 	}
@@ -282,6 +284,21 @@ sub align_all{
 	@al2=al($rev_sequence,$rev_ref);#gives the edit distance and position from end on sequence of ref2
 	$score{$structure}{end}=$al2[0];
 	$score{$structure}{endpos}=$al2[1];
+}
+
+sub print3dArray {
+	my %A = %{(shift)};
+        #my $i, $j, $k;
+
+	foreach my $i (%A){
+		foreach my $j ($A{$i}){
+			foreach my $k ($A{$i}{$j}) {
+				printf("%i ", $A{$i}{$j}{$k});
+			}
+			printf("\n");
+		}
+		printf("\n");
+	}
 }
 
 sub count_orientation_allel{
@@ -317,6 +334,7 @@ sub select_orientation{
 	my $label3=shift;
 	
 	my $y=shift;
+        #printf("%i\n", $x{$y}{$label1RC});
 	if ($x{$y}{$label1} > $x{$y}{$label1RC}){
 		$x{$y}{$label1} = $x{$y}{$label1RC};
 		$x{$y}{$label3}="rev";
