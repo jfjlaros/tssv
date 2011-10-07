@@ -215,13 +215,13 @@ sub profile {
 								$allel.=${$expr}."x".$unit."\t";
 							}
 							chop $allel;
-					#&count_orientation_allel(\%report, \%score, $ref_start, $allel);						
-							$report{$ref_start}{$allel}{amount}++;#store good allels with orientation and structure
-							if ($score{$ref_start}{orientation} eq "for"){
-								$report{$ref_start}{$allel}{amountFor}++;
-							} else {
-								$report{$ref_start}{$allel}{amountRev}++;
-							}
+					&count_orientation_allel(\%report, \%score, $ref_start, $allel);						
+							#$report{$ref_start}{$allel}{amount}++;#store good allels with orientation and structure
+							#if ($score{$ref_start}{orientation} eq "for"){
+							#	$report{$ref_start}{$allel}{amountFor}++;
+							#} else {
+							#	$report{$ref_start}{$allel}{amountRev}++;
+							#}
 
 
 							$temp=$ref_start."4";
@@ -246,7 +246,7 @@ sub profile {
 					$different_orientation++;#count when different orientations are found
 					$temp=$ref_start."5";
 					#print $temp."\n";
-					print $temp ">start:$ref_start $smallest_start end:$ref_end $smallest_end name:$name\n$sequence\n";
+					print $temp ">start:$ref_start $smallest_start end:$ref_end $smallest_end name:$name\n$temporal\n";
 				}
 			} else {
 				$different_structures++;#count when different markers are best in start and end
