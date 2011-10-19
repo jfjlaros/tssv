@@ -215,13 +215,13 @@ sub profile {
 								$allel.=${$expr}."x".$unit."\t";
 							}
 							chop $allel;
-					&count_orientation_allel(\%report, \%score, $ref_start, $allel);						
-							#$report{$ref_start}{$allel}{amount}++;#store good allels with orientation and structure
-							#if ($score{$ref_start}{orientation} eq "for"){
-							#	$report{$ref_start}{$allel}{amountFor}++;
-							#} else {
-							#	$report{$ref_start}{$allel}{amountRev}++;
-							#}
+					#&count_orientation_allel(\%report, \%score, $ref_start, $allel);						
+							$report{$ref_start}{$allel}{amount}++;#store good allels with orientation and structure
+							if ($score{$ref_start}{orientation} eq "for"){
+								$report{$ref_start}{$allel}{amountFor}++;
+							} else {
+								$report{$ref_start}{$allel}{amountRev}++;
+							}
 
 
 							$temp=$ref_start."4";
@@ -229,7 +229,6 @@ sub profile {
 						}
 					}
 					if ($reg_found==0){
-						#print3dArray(\%new);
 						#&count_orientation_allel(\%new, \%score, $ref_start, $al_repeat);
 						$new{$ref_start}{$al_repeat}{amount}++;#store new allels with orientation
 						if ($score{$ref_start}{orientation} eq "for"){
@@ -238,7 +237,6 @@ sub profile {
 							$new{$ref_start}{$al_repeat}{amountRev}++;
 						}
 						$new_allel++;
-						#print3dArray(\%new);
 						$temp=$ref_start."3";
 						print $temp ">start:$ref_start $smallest_start end:$ref_end $smallest_end name:$name orientation:$score{$ref_start}{orientation}\n$temporal\n";
 					}
@@ -252,14 +250,31 @@ sub profile {
 				$different_structures++;#count when different markers are best in start and end
 				print OUT3 ">start:$ref_start $smallest_start end:$ref_end $smallest_end name:$name orientation:$score{$ref_start}{orientation}\n$temporal\n";
 			}
-		} elsif ($smallest_start <= (length ($hash{$ref_start}{ref1})/25*$ARGV[2])){#if no end is found
+		} elsif ($smallest_start <= (length ($hash{$ref_start}{ref1})/25*$ARGV[2])){#if no end is found			
 			$no_end++;#count total reads with no end marker
-			&count_orientation (\%error_end, \%score, $ref_start);			
+			
+			#&count_orientation (\%error_end, \%score, $ref_start);
+
+			$error_end{$ref_start}{amount}++;#store new allels with orientation
+			if ($score{$ref_start}{orientation} eq "for"){
+				$error_end{$ref_start}{amountFor}++;
+			} else {
+				$error_end{$ref_start}{amountRev}++;
+			}
+			
 			$temp=$ref_start."1";
 			print $temp ">start:$ref_start $smallest_start end:$ref_end $smallest_end name:$name orientation:$score{$ref_start}{orientation}\n$temporal\n";
 		} elsif ($smallest_end <= (length ($hash{$ref_end}{ref2})/25*$ARGV[2])){
 			$no_start++;#count total reads with no start marker
-			&count_orientation (\%error_start, \%score, $ref_end);
+			#&count_orientation ($ref_end, %error_start, %score);
+
+			$error_start{$ref_end}{amount}++;#store new allels with orientation
+			if ($score{$ref_end}{orientation} eq "for"){
+				$error_start{$ref_end}{amountFor}++;
+			} else {
+				$error_start{$ref_end}{amountRev}++;
+			}
+
 			$temp=$ref_end."2";
 			print $temp ">start:$ref_start $smallest_start end:$ref_end $smallest_end name:$name orientation:$score{$ref_end}{orientationend}\n$temporal\n";
 		} else {
@@ -286,21 +301,6 @@ sub align_all{
 	$score{$structure}{endpos}=$al2[1];
 }
 
-sub print3dArray {
-	my %A = %{(shift)};
-        #my $i, $j, $k;
-
-	foreach my $i (%A){
-		foreach my $j ($A{$i}){
-			foreach my $k ($A{$i}{$j}) {
-				printf("%i ", $A{$i}{$j}{$k});
-			}
-			printf("\n");
-		}
-		printf("\n");
-	}
-}
-
 sub count_orientation_allel{
 	my %x=%{(shift)};
 	my %y=%{(shift)};
@@ -314,10 +314,10 @@ sub count_orientation_allel{
 	}
 }
 
-sub count_orientation{
-	my %x=%{(shift)};
-	my %y=%{(shift)};
-	my $ref=shift;
+sub count_orientation($ \% \%){
+	my $ref = shift;
+	my %x = %{(shift)};
+	my %y = %{(shift)};
 	$x{$ref}{amount}++;#store new allels with orientation
 	if ($y{$ref}{orientation} eq "for"){
 		$x{$ref}{amountFor}++;
@@ -325,6 +325,7 @@ sub count_orientation{
 		$x{$ref}{amountRev}++;
 	}
 }
+
 sub select_orientation{
 	my %x=%{(shift)};
 	my $label1=shift;
