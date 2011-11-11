@@ -160,29 +160,10 @@ sub profile {
 		my $found=0;
 		foreach my $structure (keys %hash){
 			if (length ($sequence) > length ($hash{$structure}{ref1})){#it is important that the length of the input sequence is longer than the aligned structure	
-				#&align_all($sequence, \%hash, $structure, \%score);			
-				@al1=al($sequence,$hash{$structure}{ref1});#gives the edit distance and position on sequence of ref1
-				$score{$structure}{begin}=$al1[0];
-				$score{$structure}{startpos}=$al1[1];
-				
-				$rev_sequence=reverse($sequence);				
-				$rev_ref=reverse($hash{$structure}{ref2});
-				@al2=al($rev_sequence,$rev_ref);#gives the edit distance and position from end on sequence of ref2
-				$score{$structure}{end}=$al2[0];
-				$score{$structure}{endpos}=$al2[1];
-				
+				&align_all("", $sequence, $structure, \%hash, \%score);			
 				#The sequence is converted to the reverse complement
 				$revcompl = complement($sequence);
-
-				@al1=al($revcompl,$hash{$structure}{ref1});#gives the edit distance and position on rev_compl sequence of ref1
-				$score{$structure}{beginRC}=$al1[0];
-				$score{$structure}{startposRC}=$al1[1];
-				
-				$rev_sequence=reverse($revcompl);				
-				$rev_ref=reverse($hash{$structure}{ref2});
-				@al2=al($rev_sequence,$rev_ref);#gives the edit distance and position from end on rev_compl sequence of ref2
-				$score{$structure}{endRC}=$al2[0];
-				$score{$structure}{endposRC}=$al2[1];
+				&align_all("RC", $revcompl, $structure, \%hash, \%score);
 				$found=1;
 				#the smallest edit distance is selected between forward and reverse-complement sequence
 				&select_orientation(\%score,"begin", "startpos", "orientation", $structure);
@@ -215,27 +196,13 @@ sub profile {
 								$allel.=${$expr}."x".$unit."\t";
 							}
 							chop $allel;
-					#&count_orientation_allel(\%report, \%score, $ref_start, $allel);						
-							$report{$ref_start}{$allel}{amount}++;#store good allels with orientation and structure
-							if ($score{$ref_start}{orientation} eq "for"){
-								$report{$ref_start}{$allel}{amountFor}++;
-							} else {
-								$report{$ref_start}{$allel}{amountRev}++;
-							}
-
-
+							&count_orientation_allel($ref_start, $allel, \%report, \%score);						
 							$temp=$ref_start."4";
 							print $temp ">start:$ref_start $smallest_start end:$ref_end $smallest_end name:$name orientation:$score{$ref_start}{orientation}\n$temporal\n";
 						}
 					}
 					if ($reg_found==0){
-						#&count_orientation_allel(\%new, \%score, $ref_start, $al_repeat);
-						$new{$ref_start}{$al_repeat}{amount}++;#store new allels with orientation
-						if ($score{$ref_start}{orientation} eq "for"){
-							$new{$ref_start}{$al_repeat}{amountFor}++;
-						} else {
-							$new{$ref_start}{$al_repeat}{amountRev}++;
-						}
+						&count_orientation_allel($ref_start, $al_repeat, \%new, \%score);
 						$new_allel++;
 						$temp=$ref_start."3";
 						print $temp ">start:$ref_start $smallest_start end:$ref_end $smallest_end name:$name orientation:$score{$ref_start}{orientation}\n$temporal\n";
@@ -252,29 +219,12 @@ sub profile {
 			}
 		} elsif ($smallest_start <= (length ($hash{$ref_start}{ref1})/25*$ARGV[2])){#if no end is found			
 			$no_end++;#count total reads with no end marker
-			
-			#&count_orientation (\%error_end, \%score, $ref_start);
-
-			$error_end{$ref_start}{amount}++;#store new allels with orientation
-			if ($score{$ref_start}{orientation} eq "for"){
-				$error_end{$ref_start}{amountFor}++;
-			} else {
-				$error_end{$ref_start}{amountRev}++;
-			}
-			
+			&count_orientation ($ref_start, \%error_end, \%score);
 			$temp=$ref_start."1";
 			print $temp ">start:$ref_start $smallest_start end:$ref_end $smallest_end name:$name orientation:$score{$ref_start}{orientation}\n$temporal\n";
 		} elsif ($smallest_end <= (length ($hash{$ref_end}{ref2})/25*$ARGV[2])){
 			$no_start++;#count total reads with no start marker
-			#&count_orientation ($ref_end, %error_start, %score);
-
-			$error_start{$ref_end}{amount}++;#store new allels with orientation
-			if ($score{$ref_end}{orientation} eq "for"){
-				$error_start{$ref_end}{amountFor}++;
-			} else {
-				$error_start{$ref_end}{amountRev}++;
-			}
-
+			count_orientation ($ref_end, \%error_start, \%score);
 			$temp=$ref_end."2";
 			print $temp ">start:$ref_start $smallest_start end:$ref_end $smallest_end name:$name orientation:$score{$ref_end}{orientationend}\n$temporal\n";
 		} else {
@@ -284,45 +234,42 @@ sub profile {
 		$sequence="";
 	}
 }
-
-sub align_all{
-	my $seq=shift;
-	my %hash=%{(shift)};
-	my $structure=shift;
-	my %score=%{(shift)};
-	#print "$seq, $hash{$structure}{ref1}\n";
-	@al1=al($seq,$hash{$structure}{ref1});#gives the edit distance and position on sequence of ref1
-	$score{$structure}{begin}=$al1[0];
-	$score{$structure}{startpos}=$al1[1];
-	my $rev_sequence=reverse($seq);				
-	my $rev_ref=reverse($hash{$structure}{ref2});
-	@al2=al($rev_sequence,$rev_ref);#gives the edit distance and position from end on sequence of ref2
-	$score{$structure}{end}=$al2[0];
-	$score{$structure}{endpos}=$al2[1];
-}
-
-sub count_orientation_allel{
-	my %x=%{(shift)};
-	my %y=%{(shift)};
-	my $ref=shift;
-	my $subject=shift;
-	$x{$ref}{$subject}{amount}++;#store good allels with orientation and structure
-	if ($y{$ref}{orientation} eq "for"){
-		$x{$ref}{$subject}{amountFor}++;
+sub count_orientation{
+	my $ref = shift;
+	my ($x,$y) = @_;
+	$$x{$ref}{amount}++;#store new allels with orientation
+	if ($$y{$ref}{orientation} eq "for"){
+		$$x{$ref}{amountFor}++;
 	} else {
-		$x{$ref}{$subject}{amountRev}++;
+		$$x{$ref}{amountRev}++;
 	}
 }
 
-sub count_orientation($ \% \%){
-	my $ref = shift;
-	my %x = %{(shift)};
-	my %y = %{(shift)};
-	$x{$ref}{amount}++;#store new allels with orientation
-	if ($y{$ref}{orientation} eq "for"){
-		$x{$ref}{amountFor}++;
+sub align_all{
+	my $label = shift;
+	my $seq = shift;
+	my $structure = shift;
+	my ($hash,$score) = @_;
+	#print "$seq, $hash{$structure}{ref1}\n";
+	@al1=al($seq,$$hash{$structure}{ref1});#gives the edit distance and position on sequence of ref1
+	$$score{$structure}{begin.$label}=$al1[0];
+	$$score{$structure}{startpos.$label}=$al1[1];
+	my $rev_sequence=reverse($seq);				
+	my $rev_ref=reverse($$hash{$structure}{ref2});
+	@al2=al($rev_sequence,$rev_ref);#gives the edit distance and position from end on sequence of ref2
+	$$score{$structure}{end.$label}=$al2[0];
+	$$score{$structure}{endpos.$label}=$al2[1];
+}
+
+sub count_orientation_allel{
+	my $ref=shift;
+	my $subject=shift;
+	my ($x, $y)=@_;
+	$$x{$ref}{$subject}{amount}++;#store good allels with orientation and structure
+	if ($$y{$ref}{orientation} eq "for"){
+		$$x{$ref}{$subject}{amountFor}++;
 	} else {
-		$x{$ref}{amountRev}++;
+		$$x{$ref}{$subject}{amountRev}++;
 	}
 }
 
