@@ -104,6 +104,7 @@ my $new_allel=0;
 my $nothing=0;
 my $too_short=0;
 my $temporal="";#for switching between forward and reverse
+my $overlapping_markers=0;
 mkdir "$ARGV[3]";
 open (IN, $ARGV[0]) || die "cannot open reads file\n";#opens the reads file
 open (OUT, ">$ARGV[3]/report.txt") || die "cannot open file for writing report\n";#opens the output file for writing report
@@ -143,6 +144,7 @@ print OUT "different orientations: $different_orientation\n";
 print OUT "new allels: $new_allel\n";
 print OUT "good allels: $correct_allel\n";
 print OUT "too short input sequences: $too_short\n"; 
+print OUT "overlapping markers: $overlapping_markers\n"; 
 print OUT "\n################report\n";
 &print_double(\%report);
 print OUT "\n################error\n";
@@ -180,32 +182,36 @@ sub profile {
 		if ($smallest_start <= (length ($hash{$ref_start}{ref1})/25*$ARGV[2]) && $smallest_end <= (length ($hash{$ref_end}{ref2})/25*$ARGV[2])){#if the edit distance is small enough for start and end
 			if ($ref_start eq $ref_end){#and if the same start and end marker is found
 				if ($score{$ref_start}{orientation} eq $score{$ref_end}{orientationend}){#in the same orientation
-					$al_repeat=substr($temporal,$score{$ref_start}{startpos},(length($temporal)-$score{$ref_start}{endpos}-$score{$ref_start}{startpos}));#substract the repeat
-					my $reg_found=0;
-					foreach $teller (keys %{$regular{$ref_start}}){#foreach regular expression
-						if ($al_repeat =~ m/^$regular{$ref_start}{$teller}$/i){#see if pattern is found
-							$reg_found=1;
-							$correct_allel++;
-							my $allel="";
-							my $pos=0;
-							foreach $expr (1..$#-) {
-								if (!defined ${$expr}){next;}
-								$sub_slice=substr($al_repeat,$pos,($+[$expr]-$pos));#determine repeat structure
-								$unit=length($sub_slice)/length(${$expr});
-								$pos=$+[$expr];
-								$allel.=${$expr}."x".$unit."\t";
+					if (length($temporal)-$score{$ref_start}{endpos}-$score{$ref_start}{startpos} > 0){
+						$al_repeat=substr($temporal,$score{$ref_start}{startpos},(length($temporal)-$score{$ref_start}{endpos}-$score{$ref_start}{startpos}));#substract the repeat
+						my $reg_found=0;
+						foreach $teller (keys %{$regular{$ref_start}}){#foreach regular expression
+							if ($al_repeat =~ m/^$regular{$ref_start}{$teller}$/i){#see if pattern is found
+								$reg_found=1;
+								$correct_allel++;
+								my $allel="";
+								my $pos=0;
+								foreach $expr (1..$#-) {
+									if (!defined ${$expr}){next;}
+									$sub_slice=substr($al_repeat,$pos,($+[$expr]-$pos));#determine repeat structure
+									$unit=length($sub_slice)/length(${$expr});
+									$pos=$+[$expr];
+									$allel.=${$expr}."x".$unit."\t";
+								}
+								chop $allel;
+								&count_orientation_allel($ref_start, $allel, \%report, \%score);						
+								$temp=$ref_start."4";
+								print $temp ">start:$ref_start $smallest_start end:$ref_end $smallest_end name:$name orientation:$score{$ref_start}{orientation}\n$temporal\n";
 							}
-							chop $allel;
-							&count_orientation_allel($ref_start, $allel, \%report, \%score);						
-							$temp=$ref_start."4";
+						}
+						if ($reg_found==0){
+							&count_orientation_allel($ref_start, $al_repeat, \%new, \%score);
+							$new_allel++;
+							$temp=$ref_start."3";
 							print $temp ">start:$ref_start $smallest_start end:$ref_end $smallest_end name:$name orientation:$score{$ref_start}{orientation}\n$temporal\n";
 						}
-					}
-					if ($reg_found==0){
-						&count_orientation_allel($ref_start, $al_repeat, \%new, \%score);
-						$new_allel++;
-						$temp=$ref_start."3";
-						print $temp ">start:$ref_start $smallest_start end:$ref_end $smallest_end name:$name orientation:$score{$ref_start}{orientation}\n$temporal\n";
+					} else {
+						$overlapping_markers++;
 					}
 				} else {
 					$different_orientation++;#count when different orientations are found
@@ -252,13 +258,13 @@ sub align_all{
 	my ($hash,$score) = @_;
 	#print "$seq, $hash{$structure}{ref1}\n";
 	@al1=al($seq,$$hash{$structure}{ref1});#gives the edit distance and position on sequence of ref1
-	$$score{$structure}{begin.$label}=$al1[0];
-	$$score{$structure}{startpos.$label}=$al1[1];
+	$$score{$structure}{"begin".$label}=$al1[0];#print "begin1 $al1[0]\n";
+	$$score{$structure}{"startpos".$label}=$al1[1];#print "start on sequence $al1[1]";
 	my $rev_sequence=reverse($seq);				
 	my $rev_ref=reverse($$hash{$structure}{ref2});
 	@al2=al($rev_sequence,$rev_ref);#gives the edit distance and position from end on sequence of ref2
-	$$score{$structure}{end.$label}=$al2[0];
-	$$score{$structure}{endpos.$label}=$al2[1];
+	$$score{$structure}{"end".$label}=$al2[0];#print "end2 $al2[0]\n";
+	$$score{$structure}{"endpos".$label}=$al2[1];#print "end on sequence $al2[1]";
 }
 
 sub count_orientation_allel{
