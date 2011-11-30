@@ -59,11 +59,9 @@ J.W.F. van der Heijden, K.J. van der Graag, J.F.J. Laros.
 
 =cut
 
-
-#use strict;
 use List::Util qw[min max];
 
-if(scalar(@ARGV) != 4){#check for the amount of parameters in the command code
+if(scalar(@ARGV) != 4){#check for the amount of parameters in the command line
 	print "Please use the correct parameters\nUsage: FLDO_tool.pl -FLDO reads file- -marker library- -allowed mismatches for 25nt (recommended=2)- -run code-\n";
 	exit();
 }
@@ -93,8 +91,7 @@ my $sequence="";#current analysed sequence
 my @al1="";#storage for edit distances
 my @al2="";#storage for edit distances
 my %report=();#storage for output
-my %error=();
-my %new=();
+my %new=();#storage for new alleles
 my $correct_allel=0;#variables for encountering possibilities in reads
 my $different_structures=0;
 my $different_orientation=0;
@@ -103,7 +100,7 @@ my $no_start=0;
 my $new_allel=0;
 my $nothing=0;
 my $too_short=0;
-my $temporal="";#for switching between forward and reverse
+my $temporal="";#for switching between forward and reverse sequence
 my $overlapping_markers=0;
 mkdir "$ARGV[3]";
 open (IN, $ARGV[0]) || die "cannot open reads file\n";#opens the reads file
@@ -133,8 +130,8 @@ while (<IN>){
 	}
 }
 &profile($sequence,$name);#again the subroutine for last read
-
 close IN;
+
 print OUT "total reads: $read\n";#now all variables and hashes can be printed
 print OUT "beginning but no end: $no_end\n";
 print OUT "end but no beginning: $no_start\n";
@@ -150,10 +147,12 @@ print OUT "\n################report\n";
 print OUT "\n################error\n";
 &print_single(\%error_end, "no end");
 &print_single(\%error_start, "no start");
+&print_single(\%overlapping, "overlapping");
 print OUT "\n################new\n";
 &print_double(\%new);
 close OUT;
 
+#this routine does the actual job, the profiling. Input is a sequence and a name tag for it. It outputs files with reads and does alignment, pattern matching and counting.
 sub profile {
 	$sequence=$_[0];
 	$name=$_[1];
@@ -178,11 +177,10 @@ sub profile {
 		(my $ref_end,my $smallest_end) = &sort_smallest(\%score,"end",$ref_start);
 		
 		if ($score{$ref_start}{orientation} eq "rev"){$temporal=$revcompl;}else{$temporal=$sequence;}
-		#print $ref_end."\n".$score{$ref_end}{orientationend}."\n";
 		if ($smallest_start <= (length ($hash{$ref_start}{ref1})/25*$ARGV[2]) && $smallest_end <= (length ($hash{$ref_end}{ref2})/25*$ARGV[2])){#if the edit distance is small enough for start and end
 			if ($ref_start eq $ref_end){#and if the same start and end marker is found
 				if ($score{$ref_start}{orientation} eq $score{$ref_end}{orientationend}){#in the same orientation
-					if (length($temporal)-$score{$ref_start}{endpos}-$score{$ref_start}{startpos} > 0){
+					if (length($temporal)-$score{$ref_start}{endpos}-$score{$ref_start}{startpos} > 0){#check if flanking sequences overlap.
 						$al_repeat=substr($temporal,$score{$ref_start}{startpos},(length($temporal)-$score{$ref_start}{endpos}-$score{$ref_start}{startpos}));#substract the repeat
 						my $reg_found=0;
 						foreach $teller (keys %{$regular{$ref_start}}){#foreach regular expression
@@ -203,6 +201,7 @@ sub profile {
 						}
 					} else {
 						$overlapping_markers++;
+						&count_orientation ($ref_start, \%overlapping, \%score);
 					}
 				} else {
 					$different_orientation++;#count when different orientations are found
@@ -221,7 +220,7 @@ sub profile {
 			print $temp ">start:$ref_start $smallest_start end:$ref_end $smallest_end name:$name orientation:$score{$ref_start}{orientation}\n$temporal\n";
 		} elsif ($smallest_end <= (length ($hash{$ref_end}{ref2})/25*$ARGV[2])){
 			$no_start++;#count total reads with no start marker
-			count_orientation ($ref_end, \%error_start, \%score);
+			&count_orientation ($ref_end, \%error_start, \%score);
 			$temp=$ref_end."2";
 			print $temp ">start:$ref_start $smallest_start end:$ref_end $smallest_end name:$name orientation:$score{$ref_end}{orientationend}\n$temporal\n";
 		} else {
@@ -231,7 +230,7 @@ sub profile {
 		$sequence="";
 	}
 }
-
+#This routine is the pattern matching routine. Input is an allel (a string) and it outputs blocks of sequences.
 sub pattern_matching{
 	my $al_repeat=shift;
 	my $allel="";
@@ -247,7 +246,7 @@ sub pattern_matching{
 	return $allel;
 }
 
-sub count_orientation{
+sub count_orientation{#This routine does some counting for the different directions
 	my $ref = shift;
 	my ($x,$y) = @_;
 	$$x{$ref}{amount}++;#store new allels with orientation
@@ -263,15 +262,14 @@ sub align_all{
 	my $seq = shift;
 	my $structure = shift;
 	my ($hash,$score) = @_;
-	#print "$seq, $hash{$structure}{ref1}\n";
 	@al1=al($seq,$$hash{$structure}{ref1});#gives the edit distance and position on sequence of ref1
-	$$score{$structure}{"begin".$label}=$al1[0];#print "begin1 $al1[0]\n";
-	$$score{$structure}{"startpos".$label}=$al1[1];#print "start on sequence $al1[1]";
+	$$score{$structure}{"begin".$label}=$al1[0];
+	$$score{$structure}{"startpos".$label}=$al1[1];
 	my $rev_sequence=reverse($seq);				
 	my $rev_ref=reverse($$hash{$structure}{ref2});
 	@al2=al($rev_sequence,$rev_ref);#gives the edit distance and position from end on sequence of ref2
-	$$score{$structure}{"end".$label}=$al2[0];#print "end2 $al2[0]\n";
-	$$score{$structure}{"endpos".$label}=$al2[1];#print "end on sequence $al2[1]";
+	$$score{$structure}{"end".$label}=$al2[0];
+	$$score{$structure}{"endpos".$label}=$al2[1];
 }
 
 sub count_orientation_allel{
@@ -293,9 +291,8 @@ sub select_orientation{
 	my $label2=shift;
 	my $label2RC=$label2."RC";
 	my $label3=shift;
-	
 	my $y=shift;
-        #printf("%i\n", $x{$y}{$label1RC});
+
 	if ($x{$y}{$label1} > $x{$y}{$label1RC}){
 		$x{$y}{$label1} = $x{$y}{$label1RC};
 		$x{$y}{$label3}="rev";
@@ -328,7 +325,7 @@ sub sort_smallest{#this subroutine sorts out the smallest number in a hash and g
 	return ($ref, $smallest);
 }
 
-sub complement {#this subroutine determines the reverse complement of the sequence
+sub complement {#this subroutine determines the reverse complement of a DNA sequence
 	my $x=shift;	
 	@seq=split(//,$x);
 	my $temp="";
@@ -364,7 +361,7 @@ sub print_double {#this subroutine does the printing for the report and the new 
 	}
 }
 
-sub print_single {#this subroutine does the printing for the error hash
+sub print_single {#this subroutine does the printing for the error hashes
 	my(%hash) = %{(shift)};
 	my $label = shift;
 	foreach my $structure (sort keys %hash){
