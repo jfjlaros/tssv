@@ -172,7 +172,7 @@ sub profile {
 				&select_orientation(\%score,"end", "endpos", "orientationend", $structure);				
 			}
 		}
-		if ($found==0){$too_short++;next;}
+		if ($found==0){$too_short++;return;}
 		
 		(my $ref_start,my $smallest_start) = &sort_smallest(\%score,"begin");	
 		(my $ref_end,my $smallest_end) = &sort_smallest(\%score,"end",$ref_start);
@@ -189,16 +189,7 @@ sub profile {
 							if ($al_repeat =~ m/^$regular{$ref_start}{$teller}$/i){#see if pattern is found
 								$reg_found=1;
 								$correct_allel++;
-								my $allel="";
-								my $pos=0;
-								foreach $expr (1..$#-) {
-									if (!defined ${$expr}){next;}
-									$sub_slice=substr($al_repeat,$pos,($+[$expr]-$pos));#determine repeat structure
-									$unit=length($sub_slice)/length(${$expr});
-									$pos=$+[$expr];
-									$allel.=${$expr}."x".$unit."\t";
-								}
-								chop $allel;
+								$allel=&pattern_matching($al_repeat);
 								&count_orientation_allel($ref_start, $allel, \%report, \%score);						
 								$temp=$ref_start."4";
 								print $temp ">start:$ref_start $smallest_start end:$ref_end $smallest_end name:$name orientation:$score{$ref_start}{orientation}\n$temporal\n";
@@ -240,6 +231,22 @@ sub profile {
 		$sequence="";
 	}
 }
+
+sub pattern_matching{
+	my $al_repeat=shift;
+	my $allel="";
+	my $pos=0;
+	foreach $expr (1..$#-) {
+		if (!defined ${$expr}){next;}
+		$sub_slice=substr($al_repeat,$pos,($+[$expr]-$pos));#determine repeat structure
+		$unit=length($sub_slice)/length(${$expr});
+		$pos=$+[$expr];
+		$allel.=${$expr}."x".$unit."\t";
+	}
+	chop $allel;
+	return $allel;
+}
+
 sub count_orientation{
 	my $ref = shift;
 	my ($x,$y) = @_;
