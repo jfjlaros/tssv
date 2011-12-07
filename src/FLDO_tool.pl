@@ -61,8 +61,8 @@ J.W.F. van der Heijden, K.J. van der Graag, J.F.J. Laros.
 
 use List::Util qw[min max];
 
-if(scalar(@ARGV) != 4){#check for the amount of parameters in the command line
-	print "Please use the correct parameters\nUsage: FLDO_tool.pl -FLDO reads file- -marker library- -allowed mismatches for 25nt (recommended=2)- -run code-\n";
+if(scalar(@ARGV) != 5){#check for the amount of parameters in the command line
+	print "Please use the correct parameters\nUsage: FLDO_tool.pl -FLDO reads file- -marker library- -allowed mismatches for 25nt (recommended=2)- -run code- - only print counts higher that given number - \n";
 	exit();
 }
 
@@ -76,18 +76,16 @@ while (<REF>){
 	my @element=split(/\t/,$_);
 	$hash{$element[0]}{ref1}=$element[1];#places start marker in hash under ref1
 	$hash{$element[0]}{ref2}=$element[2];#places end marker in hash under ref2
-	for (my $i=3;$i<@element;$i++){
-		@repeat_structure=split(/ /,$element[$i]);
-		my $reg="";
-		for (my $j=0;$j<@repeat_structure;$j+=3){
-			$reg.="($repeat_structure[$j]){".$repeat_structure[($j+1)].",".$repeat_structure[($j+2)]."}";#builds regular expression for use in pattern matching
-		}
-		$regular{$element[0]}{$i}=$reg;#stores the regular expression in "regular"
+	@repeat_structure=split(/ /,$element[3]);
+	my $reg="";
+	for (my $j=0;$j<@repeat_structure;$j+=3){
+		$reg.="($repeat_structure[$j]){".$repeat_structure[($j+1)].",".$repeat_structure[($j+2)]."}";#builds regular expression for use in pattern matching
 	}
+	$regular{$element[0]}=$reg;#stores the regular expression in "regular"
 }
 close REF;
 my $read=0;#counts the total reads
-my $sequence="";#current analysed sequence
+my $sequence="";#current analyzed sequence
 my @al1="";#storage for edit distances
 my @al2="";#storage for edit distances
 my %report=();#storage for output
@@ -182,26 +180,21 @@ sub profile {
 				if ($score{$ref_start}{orientation} eq $score{$ref_end}{orientationend}){#in the same orientation
 					if (length($temporal)-$score{$ref_start}{endpos}-$score{$ref_start}{startpos} > 0){#check if flanking sequences overlap.
 						$al_repeat=substr($temporal,$score{$ref_start}{startpos},(length($temporal)-$score{$ref_start}{endpos}-$score{$ref_start}{startpos}));#substract the repeat
-						my $reg_found=0;
-						foreach $teller (keys %{$regular{$ref_start}}){#foreach regular expression
-							if ($al_repeat =~ m/^$regular{$ref_start}{$teller}$/i){#see if pattern is found
-								$reg_found=1;
-								$correct_allel++;
-								$allel=&pattern_matching($al_repeat);
-								&count_orientation_allel($ref_start, $allel, \%report, \%score);						
-								$temp=$ref_start."4";
-								print $temp ">start:$ref_start $smallest_start end:$ref_end $smallest_end name:$name orientation:$score{$ref_start}{orientation}\n$temporal\n";
-							}
-						}
-						if ($reg_found==0){
-							&count_orientation_allel($ref_start, $al_repeat, \%new, \%score);
+						($reg_found,$allel)=&pattern_matching(\%regular,$al_repeat,$ref_start);
+						if ($reg_found==1){
+							&count_orientation_allel($ref_start,$allel,\%report,\%score);
+							$correct_allel++;
+							$temp=$ref_start."4";
+							print $temp ">start:$ref_start $smallest_start end:$ref_end $smallest_end name:$name orientation:$score{$ref_start}{orientation}\n$temporal\n";
+						} else {
+							&count_orientation_allel($ref_start,$al_repeat,\%new,\%score);
 							$new_allel++;
 							$temp=$ref_start."3";
 							print $temp ">start:$ref_start $smallest_start end:$ref_end $smallest_end name:$name orientation:$score{$ref_start}{orientation}\n$temporal\n";
 						}
 					} else {
 						$overlapping_markers++;
-						&count_orientation ($ref_start, \%overlapping, \%score);
+						&count_orientation($ref_start,\%overlapping,\%score);
 					}
 				} else {
 					$different_orientation++;#count when different orientations are found
@@ -230,26 +223,32 @@ sub profile {
 		$sequence="";
 	}
 }
-#This routine is the pattern matching routine. Input is an allel (a string) and it outputs blocks of sequences.
+#This routine is the pattern matching routine. Input is an allele (a string) and it outputs blocks of sequences.
 sub pattern_matching{
+	my %regular=%{(shift)};
 	my $al_repeat=shift;
-	my $allel="";
-	my $pos=0;
-	foreach $expr (1..$#-) {
-		if (!defined ${$expr}){next;}
-		$sub_slice=substr($al_repeat,$pos,($+[$expr]-$pos));#determine repeat structure
-		$unit=length($sub_slice)/length(${$expr});
-		$pos=$+[$expr];
-		$allel.=${$expr}."x".$unit."\t";
+	my $ref_start=shift;
+	my $reg_found=0;
+	if ($al_repeat =~ m/^$regular{$ref_start}$/i){#see if pattern is found
+		$reg_found=1;
+		my $allel="";
+		my $pos=0;
+		foreach $expr (1..$#-) {
+			if (!defined ${$expr}){next;}
+			$sub_slice=substr($al_repeat,$pos,($+[$expr]-$pos));#determine repeat structure
+			$unit=length($sub_slice)/length(${$expr});
+			$pos=$+[$expr];
+			$allel.=${$expr}."x".$unit."\t";
+		}
+		chop $allel;
+		return ($reg_found,$allel);
 	}
-	chop $allel;
-	return $allel;
 }
 
 sub count_orientation{#This routine does some counting for the different directions
 	my $ref = shift;
 	my ($x,$y) = @_;
-	$$x{$ref}{amount}++;#store new allels with orientation
+	$$x{$ref}{amount}++;#store new alleles with orientation
 	if ($$y{$ref}{orientation} eq "for"){
 		$$x{$ref}{amountFor}++;
 	} else {
@@ -276,7 +275,7 @@ sub count_orientation_allel{
 	my $ref=shift;
 	my $subject=shift;
 	my ($x, $y)=@_;
-	$$x{$ref}{$subject}{amount}++;#store good allels with orientation and structure
+	$$x{$ref}{$subject}{amount}++;#store good alleles with orientation and structure
 	if ($$y{$ref}{orientation} eq "for"){
 		$$x{$ref}{$subject}{amountFor}++;
 	} else {
@@ -344,19 +343,21 @@ sub print_double {#this subroutine does the printing for the report and the new 
 	my %hash = %{(shift)};
 	foreach my $structure (sort keys %hash){
 		foreach my $allel (sort keys %{$hash{$structure}}){
-			print OUT "$structure\tFor:";
-			if (exists $hash{$structure}{$allel}{amountFor}){
-				print OUT $hash{$structure}{$allel}{amountFor}."\t";
-			} else {
-				print OUT "0\t";
+			if ($hash{$structure}{$allel}{amount} > $ARGV[4]){
+				print OUT "$structure\tFor:";
+				if (exists $hash{$structure}{$allel}{amountFor}){
+					print OUT $hash{$structure}{$allel}{amountFor}."\t";
+				} else {
+					print OUT "0\t";
+				}
+				print OUT "Rev:";
+				if (exists $hash{$structure}{$allel}{amountRev}){
+					print OUT $hash{$structure}{$allel}{amountRev}."\t";
+				} else {
+					print OUT "0\t";
+				}
+				print OUT "$hash{$structure}{$allel}{amount}\t$allel\n";#prints per marker new alleles or good alleles with the count
 			}
-			print OUT "Rev:";
-			if (exists $hash{$structure}{$allel}{amountRev}){
-				print OUT $hash{$structure}{$allel}{amountRev}."\t";
-			} else {
-				print OUT "0\t";
-			}
-			print OUT "$hash{$structure}{$allel}{amount}\t$allel\n";#prints per marker new allels or good allels with the count
 		}
 	}
 }
@@ -365,19 +366,21 @@ sub print_single {#this subroutine does the printing for the error hashes
 	my(%hash) = %{(shift)};
 	my $label = shift;
 	foreach my $structure (sort keys %hash){
-		print OUT $label.": $structure\tFor:";
-		if (exists $hash{$structure}{amountFor}){
-			print OUT $hash{$structure}{amountFor}."\t";
-		} else {
-			print OUT "0\t";
+		if ($hash{$structure}{amount} > $ARGV[4]){
+			print OUT $label.": $structure\tFor:";
+			if (exists $hash{$structure}{amountFor}){
+				print OUT $hash{$structure}{amountFor}."\t";
+			} else {
+				print OUT "0\t";
+			}
+			print OUT "Rev:";
+			if (exists $hash{$structure}{amountRev}){
+				print OUT $hash{$structure}{amountRev}."\t";
+			} else {
+				print OUT "0\t";
+			}
+			print OUT "$hash{$structure}{amount}\n";#prints per marker new allels with the count
 		}
-		print OUT "Rev:";
-		if (exists $hash{$structure}{amountRev}){
-			print OUT $hash{$structure}{amountRev}."\t";
-		} else {
-			print OUT "0\t";
-		}
-		print OUT "$hash{$structure}{amount}\n";#prints per marker new allels with the count
 	}
 }
 
@@ -385,7 +388,7 @@ sub makeMatrix {
   my ($xSize, $ySize) = @_;
 
   for (my $y = 0; $y < $ySize; $y++) {
-    $matrix[0][$y] = $y;   # Initialise the first row with increasing numbers.
+    $matrix[0][$y] = $y;   # Initialize the first row with increasing numbers.
   }#for
   for (my $x = 1; $x < $xSize; $x++) {
     for (my $y = 0; $y < $ySize; $y++) {
@@ -444,7 +447,7 @@ sub align {
       # Choosing matrix[x - 1][y] or matrix[x][y - 1] introduces a gap, with
       #   penalty 1. 
       # Choosing matrix[x - 1][y - 1] either introduces a mismatch, or a match,
-      #   depening on the match of seq1[x - 1] and seq2[y - 1].
+      #   depending on the match of seq1[x - 1] and seq2[y - 1].
       $matrix[$x][$y] = min($matrix[$x - 1][$y] + 1, $matrix[$x][$y - 1] + 1,
                             $matrix[$x - 1][$y - 1] + 
                             int(substr($seq1, $x - 1, 1) ne
@@ -455,7 +458,7 @@ sub align {
 }#align
 
 # Find the minimum distance, ignoring a trailing gap in the sequence associated
-#  with the number of rows in an alignment matrix. If the miniumum distance is
+#  with the number of rows in an alignment matrix. If the minimum distance is
 #  found, also return the row number.
 #
 # It is assumed that the number of rows is larger than the number of columns.
