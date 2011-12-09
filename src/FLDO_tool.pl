@@ -179,7 +179,7 @@ sub profile {
 			if ($ref_start eq $ref_end){#and if the same start and end marker is found
 				if ($score{$ref_start}{orientation} eq $score{$ref_end}{orientationend}){#in the same orientation
 					if (length($temporal)-$score{$ref_start}{endpos}-$score{$ref_start}{startpos} > 0){#check if flanking sequences overlap.
-						$al_repeat=substr($temporal,$score{$ref_start}{startpos},(length($temporal)-$score{$ref_start}{endpos}-$score{$ref_start}{startpos}));#substract the repeat
+						$al_repeat=substr($temporal,$score{$ref_start}{startpos},(length($temporal)-$score{$ref_start}{endpos}-$score{$ref_start}{startpos}));#subtracts the repeat
 						($reg_found,$allel)=&pattern_matching(\%regular,$al_repeat,$ref_start);
 						if ($reg_found==1){
 							&count_orientation_allel($ref_start,$allel,\%report,\%score);
@@ -342,8 +342,8 @@ sub complement {#this subroutine determines the reverse complement of a DNA sequ
 sub print_double {#this subroutine does the printing for the report and the new hashes.
 	my %hash = %{(shift)};
 	foreach my $structure (sort keys %hash){
-		foreach my $allel (sort keys %{$hash{$structure}}){
-			if ($hash{$structure}{$allel}{amount} > $ARGV[4]){
+		foreach $allel (reverse sort {$hash{$structure}{$a}{amount} <=> $hash{$structure}{$b}{amount}} keys %{$hash{$structure}}){
+      			if ($hash{$structure}{$allel}{amount} > $ARGV[4]){
 				print OUT "$structure\tFor:";
 				if (exists $hash{$structure}{$allel}{amountFor}){
 					print OUT $hash{$structure}{$allel}{amountFor}."\t";
@@ -365,7 +365,7 @@ sub print_double {#this subroutine does the printing for the report and the new 
 sub print_single {#this subroutine does the printing for the error hashes
 	my(%hash) = %{(shift)};
 	my $label = shift;
-	foreach my $structure (sort keys %hash){
+	foreach $structure(reverse sort {$hash{$a}{amount} <=> $hash{$b}{amount}} keys %hash){
 		if ($hash{$structure}{amount} > $ARGV[4]){
 			print OUT $label.": $structure\tFor:";
 			if (exists $hash{$structure}{amountFor}){
