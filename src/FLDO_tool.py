@@ -7,7 +7,7 @@ def profile(sequence, name, files, markerlib, tellers, mismatches, report, newal
 	"""
 	This profile routine does gathers information about read's best alignment score and prints that 
 
-	@arg sequence: the read to be analysed
+	@arg sequence: the read to be analyzed
 	@type sequence: string
 	@arg name: read identifier
 	@type name: string
@@ -15,11 +15,11 @@ def profile(sequence, name, files, markerlib, tellers, mismatches, report, newal
 	@type files: dict
 	@arg markerlib: library of markers and regular expressions
 	@type markerlib: dict
-	@arg tellers: counters for read specificatios
+	@arg tellers: counters for read specifications
 	@type tellers: array
 	@arg mismatches: allowed mismatches per 25 nucleotides in alignment
 	@type mismatches: int
-	@arg report: dictionary to store report ouput
+	@arg report: dictionary to store report output
 	@type report: dict
 	@arg newallel: dictionary to store new alleles output
 	@type newallel: dict
@@ -27,7 +27,7 @@ def profile(sequence, name, files, markerlib, tellers, mismatches, report, newal
 	@type error_start: dict
 	@arg error_start: dictionary to store read information with no end
 	@type error_start: dict
-	@arg overlapping: dictionary to store read informaion with overlapping markers
+	@arg overlapping: dictionary to store read information with overlapping markers
 	@type overlapping: dict
 
 	"""
@@ -61,11 +61,11 @@ def profile(sequence, name, files, markerlib, tellers, mismatches, report, newal
 					reg_found, allel = patternMatching(markerlib[start][2], al_repeat)
 					if (reg_found == 0):
 						count_orientation_allel(start, ref_start, al_repeat, newallel, score);
-						tellers[1] += 1	# new allel counter
+						tellers[1] += 1	# new allele counter
 						files[start][2].write(">start:"+start+" "+str(smallest_start)+" end:"+end+" "+str(smallest_end)+" name:"+name+" orientation: "+score[ref_start][2]+"\n"+temporal+"\n")
 					else:
 						count_orientation_allel(start, ref_start, allel, report, score);	
-						tellers[8] += 1	# counter found allels					
+						tellers[8] += 1	# counter found alleles					
 						files[start][3].write(">start:"+start+" "+str(smallest_start)+" end:"+end+" "+str(smallest_end)+" name:"+name+" orientation: "+score[ref_start][2]+"\n"+temporal+"\n")
 				else:
 					tellers[9] += 1	# counter for overlapping markers				
@@ -120,7 +120,7 @@ def count_orientation_allel(ref1, ref2,al_repeat, dict, score):
 	@arg ref1: The marker that is found in the read
 	@type ref1: string
 	@arg ref2: The name of the start marker
-	@tpe ref2: string
+	@type ref2: string
 	@arg al_repeat: The allele found in the read
 	@type al_repeat: string
 	@arg dictionary: The dictionary in which the orientations are counted
@@ -142,7 +142,7 @@ def count_orientation_allel(ref1, ref2,al_repeat, dict, score):
 	if al_repeat in dict2:
 		dict2[al_repeat][0] +=1
 	else:
-		dict2[al_repeat] = [1, 0, 0]	# store good allels with orientation and structure
+		dict2[al_repeat] = [1, 0, 0]	# store good alleles with orientation and structure
 	if score[ref2][2] == "for":
 		dict2[al_repeat][1] += 1
 	else:
@@ -174,9 +174,9 @@ def patternMatching(regular, al_repeat):
 	@arg al_repeat: The allele
 	@type al_repeat: string
 	
-	@return reg_found: boolean to determie wheter an allele was matched
+	@return reg_found: boolean to determine whether an allele was matched
 	@rtype reg_found: bool
-	@return allel: The pattern matched allele
+	@return allele: The pattern matched allele
 	@rtype: string
 	"""
 	reg_found = 0
@@ -210,7 +210,7 @@ def ReadMarkers(FileName):
 	@arg FileName: A marker file
 	@type FileName: file
 
-	@return total: The readed in markerlibrary
+	@return total: The readed in marker library
 	@rtype total: dict
 	"""
 	total = {}
@@ -275,7 +275,7 @@ def OpenOutputFiles(path, markerlib):
 
 def ProcessFasta(FileName, files, markerlib, mismatches):
 	"""
-	This routine redas through the fasta file calling on profile subroutine which handles the rest of the work
+	This routine reads through the fasta file calling on profile subroutine which handles the rest of the work
 
 	@arg FileName: The fasta file
 	@type FileName: file
@@ -288,7 +288,7 @@ def ProcessFasta(FileName, files, markerlib, mismatches):
 	"""
 	tellers = [0,0,0,0,0,0,0,0,0,0]	
 							# 0 = counter "too short"
-							# 1 = new allel counter
+							# 1 = new allele counter
 							# 2 = different orientations counter
 							# 3 = counter for different markers in start and end
 							# 4 = total reads with no end marker counter
@@ -325,13 +325,13 @@ def makeMatrix(xSize, ySize):
 	"""
 	This routine initializes a matrix. The first row are numbers from 0 to matrix size. The rest are zero's
 
-	@arg xSize: The size of the x component of te matrix
+	@arg xSize: The size of the x component of the matrix
 	@type xSize: int
-	@arg xSize: The size of the y component of te matrix
+	@arg xSize: The size of the y component of ch matrix
 	@type ySize: int
 
 	@return matrix: The alignment matrix
-	@rtype: two deminsional array
+	@rtype: two dimensional array
 	"""
 	matrix = []
 	for i in range(xSize):
@@ -349,9 +349,9 @@ def printMatrix(matrix, xSize, ySize, seq1, seq2):
 	
 	@arg matrix: The matrix
 	@type matrix: dict
-	@arg xSize: The size of the x component of te matrix
+	@arg xSize: The size of the x component of the matrix
 	@type xSize: int
-	@arg xSize: The size of the y component of te matrix
+	@arg xSize: The size of the y component of ch matrix
 	@type ySize: int
 	@arg seq1: The sequence to be aligned to
 	@type seq1: string
@@ -373,9 +373,9 @@ def align(matrix, xSize, ySize, seq1, seq2):
 	"""
 	This routine fills the alignment matrix
 
-	@arg xSize: The size of the x component of te matrix
+	@arg xSize: The size of the x component of ch matrix
 	@type xSize: int
-	@arg xSize: The size of the y component of te matrix
+	@arg xSize: The size of the y component of the matrix
 	@type ySize: int
 	@arg seq1: The sequence to be aligned to
 	@type seq1: string
@@ -383,7 +383,7 @@ def align(matrix, xSize, ySize, seq1, seq2):
 	@type seq2: string
 
 	@return matrix: The alignment matrix
-	@rtype: two deminsional array
+	@rtype: two dimensional array
 	"""
 	for x in range(1, xSize):
 		for y in range(1, ySize):
@@ -399,9 +399,9 @@ def findMin(matrix, xSize, ySize):
 	It is assumed that the number of rows is larger than the number of columns.
 	
 	@arg matrix: An xSize * ySize matrix.
-	@arg xSize: The size of the x component of te matrix
+	@arg xSize: The size of the x component of the matrix
 	@type xSize: int
-	@arg xSize: The size of the y component of te matrix
+	@arg xSize: The size of the y component of the matrix
 	@type ySize: int
 
 	@return minimum: The minimum distance.
@@ -448,7 +448,7 @@ def align_all(label, sequence, structure, list, score):
 	@type sequence: string
 	@arg structure: The marker entry name
 	@type structure: string
-	@arg list: The list containing flanking sequences and the regulra expression
+	@arg list: The list containing flanking sequences and the regular expression
 	@type list: list
 	@arg score: The dictionary containing the alignment scores
 	@type score: dict 
@@ -485,13 +485,13 @@ def complement(sequence):
 
 def select_orientation(score, label, structure):
 	"""
-	This subroutine determines whether the normal or the ReverseComplement alignmnet was best
+	This subroutine determines whether the normal or the Reverse Complement alignment was best
 	
 	@arg score: The dictionary containing the alignment information
 	@type score: dict
 	@arg label: can be beginning or end and is used to distinguish between the first or second aligned structure
 	@type label: string
-	@arg structure: The markername
+	@arg structure: The marker name
 	@type structure: string
 
 	@returns: score dictionary
@@ -513,7 +513,7 @@ def sort_smallest(score, label, refstart):
 	This subroutine selects the smallest marker out of the alignment. 
 	If multiple smallest end marker are found it stores the one which corresponds to the begin marker
 	
-	@arg score: The scoring dictionary containing the alignmnet information
+	@arg score: The scoring dictionary containing the alignment information
 	@type score: dict
 	@arg label: To distinguish between first and second marker alignment
 	@type label: string
@@ -570,7 +570,7 @@ def print_single(report, label, reportfile):
 	
 	@arg report: The report to be printed
 	@type report: dict
-	@arg label: Label to be printed to distinguish wich report is printed
+	@arg label: Label to be printed to distinguish which report is printed
 	@type label: string
 	@arg reportfile: The file to be printed to
 	@type reportfile: file
@@ -607,8 +607,8 @@ def printOutput(files, tellers, report, newallel, error_start, error_end, overla
 	file.write("no beginning no end:      "+str(tellers[6])+"\n")
 	file.write("different structures:     "+str(tellers[3])+"\n")
 	file.write("different orientations:   "+str(tellers[2])+"\n")
-	file.write("new allels:               "+str(tellers[1])+"\n")
-	file.write("good allels:              "+str(tellers[8])+"\n")
+	file.write("new alleles:              "+str(tellers[1])+"\n")
+	file.write("good alleles:             "+str(tellers[8])+"\n")
 	file.write("too short input sequences:"+str(tellers[0])+"\n")
 	file.write("overlapping markers:      "+str(tellers[9])+"\n")
 	file.write("\n################report\n")
@@ -622,7 +622,7 @@ def printOutput(files, tellers, report, newallel, error_start, error_end, overla
 		
 def main():
 	"""
-	This subroutine calls to open utput files and calls to read the markerlib
+	This subroutine calls to open output files and calls to read the markerlib
 	"""
 	files = {}
 	args = ReadArgs()
