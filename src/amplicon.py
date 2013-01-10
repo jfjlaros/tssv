@@ -202,10 +202,9 @@ def makeReport(total, library, newAlleles, handle, minimum):
         sum(map(lambda x: len(newAlleles[x]), newAlleles)))
 
     libTable(library, handle)
-    handle.write("\n")
 
     for i in newAlleles:
-        handle.write("%s\n" % i)
+        handle.write("\nnew alleles for marker %s:\n" % i)
         alleleTable(newAlleles[i], handle, minimum)
     #for
 #makeReport
