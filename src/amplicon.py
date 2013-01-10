@@ -33,7 +33,7 @@ fileNames = {
 markerFileNames = {
     "known"   : "known.fa",
     "new"     : "new.fa",
-    "unknown" : "unknow.fa",
+    "unknown" : "unknown.fa",
     "alleles" : "alleles.csv"
 }
 """ Names of the marker specific report files. """
