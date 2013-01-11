@@ -154,7 +154,7 @@ def libTable(library, handle):
     @arg handle: Open writable handle to the output file.
     @type handle: stream
     """
-    handle.write("name\tfPaired\trPaired\tf1\tr1\tf2\tr2\n")
+    handle.write("name\tfPaired\trPaired\tfLeft\trLeft\tfRight\trRight\n")
 
     for i in library:
         handle.write("%s\t%i\t%i\t%i\t%i\t%i\t%i\n" % tuple(
