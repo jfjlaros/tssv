@@ -212,9 +212,9 @@ def makeReport(total, library, handle, minimum):
     #for
 #makeReport
 
-def amplicon(fastaHandle, libHandle, reportHandle, path, threshold, minimum):
+def tssv(fastaHandle, libHandle, reportHandle, path, threshold, minimum):
     """
-    Do the amplicon analysis.
+    Do the short structural variation analysis.
 
     @arg fastaHandle: Open readable handle to a FASTA file.
     @type fastaHandle: stream
@@ -283,7 +283,7 @@ def amplicon(fastaHandle, libHandle, reportHandle, path, threshold, minimum):
     #if
 
     makeReport(total, library, reportHandle, minimum)
-#amplicon
+#tssv
 
 def main():
     """
@@ -308,7 +308,7 @@ def main():
     args = parser.parse_args()
 
     try:
-        amplicon(args.fasta, args.lib, args.report, args.path, args.mismatches,
+        tssv(args.fasta, args.lib, args.report, args.path, args.mismatches,
             args.minimum)
     except OSError, error:
         parser.error(error)
