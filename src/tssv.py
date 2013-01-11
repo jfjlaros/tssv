@@ -26,7 +26,7 @@ from Bio import Seq, SeqIO
 import sg_align
 
 fileNames = {
-    "library" : "library.csv"
+    "markers" : "markers.csv"
 }
 """ Names of the global report files. """
 
@@ -154,7 +154,7 @@ def libTable(library, handle):
     @arg handle: Open writable handle to the output file.
     @type handle: stream
     """
-    handle.write("\nname\tfPaired\trPaired\tf1\tr1\tf2\tr2\n")
+    handle.write("name\tfPaired\trPaired\tf1\tr1\tf2\tr2\n")
 
     for i in library:
         handle.write("%s\t%i\t%i\t%i\t%i\t%i\t%i\n" % tuple(
@@ -199,7 +199,7 @@ def makeReport(total, library, handle, minimum):
     handle.write("total reads: %i\n" % total)
     handle.write("matched pairs: %i\n" % 
         sum(map(lambda x: sum(library[x]["pairMatch"]), library)))
-    handle.write("new alleles: %i\n" % 
+    handle.write("new alleles: %i\n\n" % 
         sum(map(lambda x: len(library[x]["new"]), library)))
 
     libTable(library, handle)
@@ -274,7 +274,7 @@ def tssv(fastaHandle, libHandle, reportHandle, path, threshold, minimum):
     #for
 
     if path:
-        libTable(library, files["library"])
+        libTable(library, files["markers"])
 
         for i in library:
             alleleTable(library[i]["known"], files[i]["knownalleles"], minimum)
