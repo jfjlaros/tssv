@@ -67,7 +67,8 @@ def parseLibrary(libHandle, threshold):
             "thresholds": [int(math.ceil(len(i[1]) * threshold)),
                 int(math.ceil(len(i[2]) * threshold))],
             "threshold": int(math.ceil((len(i[1]) + len(i[2])) * threshold)),
-            "regExp": re.compile(pattern)
+            "regExp": re.compile(pattern),
+            "new": collections.defaultdict(lambda: [0, 0])
         }
     #for
 
@@ -180,14 +181,12 @@ def alleleTable(newAl, handle, minimum):
     #for
 #alleleTable
 
-def makeReport(total, library, newAlleles, handle, minimum):
+def makeReport(total, library, handle, minimum):
     """
     Make an overview of the results.
 
     @arg total: Total number of reads in the FASTA file.
     @type total: int
-    @arg newAlleles: Nested dictionary containing new alleles.
-    @type newAlleles: dict
     @arg library: Nested dictionary containing library data.
     @type library: dict
     @arg handle: Open writable handle to the report file.
@@ -199,13 +198,13 @@ def makeReport(total, library, newAlleles, handle, minimum):
     handle.write("matched pairs: %i\n" % 
         sum(map(lambda x: sum(library[x]["pairMatch"]), library)))
     handle.write("new alleles: %i\n" % 
-        sum(map(lambda x: len(newAlleles[x]), newAlleles)))
+        sum(map(lambda x: len(library[x]["new"]), library)))
 
     libTable(library, handle)
 
-    for i in newAlleles:
+    for i in library:
         handle.write("\nnew alleles for marker %s:\n" % i)
-        alleleTable(newAlleles[i], handle, minimum)
+        alleleTable(library[i]["new"], handle, minimum)
     #for
 #makeReport
 
@@ -227,8 +226,6 @@ def amplicon(fastaHandle, libHandle, reportHandle, path, threshold, minimum):
     @type minimum: int
     """
     total = 0
-    newAlleles = collections.defaultdict(lambda: collections.defaultdict(
-        lambda: [0, 0]))
     library = parseLibrary(libHandle, threshold)
 
     if path:
@@ -254,7 +251,8 @@ def amplicon(fastaHandle, libHandle, reportHandle, path, threshold, minimum):
                 pat = ref[hit][alignments[hit][0][1]:alignments[hit][1][1]]
 
                 if not library[i]["regExp"].match(pat):
-                    newAlleles[i][pat][hit] += 1
+                    print library[i]["new"]
+                    library[i]["new"][pat][hit] += 1
                     classification = "new"
                 #if
             #if
@@ -277,10 +275,10 @@ def amplicon(fastaHandle, libHandle, reportHandle, path, threshold, minimum):
         libTable(library, files["library"])
 
         for i in library:
-            alleleTable(newAlleles[i], files[i]["alleles"], minimum)
+            alleleTable(library[i]["new"], files[i]["alleles"], minimum)
     #if
 
-    makeReport(total, library, newAlleles, reportHandle, minimum)
+    makeReport(total, library, reportHandle, minimum)
 #amplicon
 
 def main():
