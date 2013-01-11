@@ -31,10 +31,11 @@ fileNames = {
 """ Names of the global report files. """
 
 markerFileNames = {
-    "known"   : "known.fa",
-    "new"     : "new.fa",
-    "unknown" : "unknown.fa",
-    "alleles" : "alleles.csv"
+    "known"        : "known.fa",
+    "new"          : "new.fa",
+    "unknown"      : "unknown.fa",
+    "knownalleles" : "knownalleles.csv",
+    "newalleles"   : "newalleles.csv"
 }
 """ Names of the marker specific report files. """
 
@@ -68,7 +69,8 @@ def parseLibrary(libHandle, threshold):
                 int(math.ceil(len(i[2]) * threshold))],
             "threshold": int(math.ceil((len(i[1]) + len(i[2])) * threshold)),
             "regExp": re.compile(pattern),
-            "new": collections.defaultdict(lambda: [0, 0])
+            "new": collections.defaultdict(lambda: [0, 0]),
+            "known": collections.defaultdict(lambda: [0, 0])
         }
     #for
 
@@ -203,6 +205,8 @@ def makeReport(total, library, handle, minimum):
     libTable(library, handle)
 
     for i in library:
+        handle.write("\nknown alleles for marker %s:\n" % i)
+        alleleTable(library[i]["known"], handle, minimum)
         handle.write("\nnew alleles for marker %s:\n" % i)
         alleleTable(library[i]["new"], handle, minimum)
     #for
@@ -241,20 +245,18 @@ def amplicon(fastaHandle, libHandle, reportHandle, path, threshold, minimum):
             classification = "unknown"
 
             if min(scores) <= library[i]["threshold"]: # A matching pair.
-                classification = "known"
                 hit = 0
-
                 if scores[0] > scores[1]:              # Match reverse.
                     hit = 1
 
                 library[i]["pairMatch"][hit] += 1
                 pat = ref[hit][alignments[hit][0][1]:alignments[hit][1][1]]
 
-                if not library[i]["regExp"].match(pat):
-                    print library[i]["new"]
-                    library[i]["new"][pat][hit] += 1
-                    classification = "new"
-                #if
+                classification = "new"
+                if library[i]["regExp"].match(pat):
+                    classification = "known"
+
+                library[i][classification][pat][hit] += 1
             #if
 
             if alignments[0][0][0] <= library[i]["thresholds"][0]:
@@ -275,7 +277,9 @@ def amplicon(fastaHandle, libHandle, reportHandle, path, threshold, minimum):
         libTable(library, files["library"])
 
         for i in library:
-            alleleTable(library[i]["new"], files[i]["alleles"], minimum)
+            alleleTable(library[i]["known"], files[i]["knownalleles"], minimum)
+            alleleTable(library[i]["new"], files[i]["newalleles"], minimum)
+        #for
     #if
 
     makeReport(total, library, reportHandle, minimum)
