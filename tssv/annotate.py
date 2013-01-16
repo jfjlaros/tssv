@@ -19,7 +19,7 @@ import tssv
 
 URL = "https://mutalyzer.nl/services/?wsdl"
 
-def writeTable(data, title, reportHandle):
+def writeTable(data, title, reportHandle, minimum):
     """
     Write a table to a file.
 
@@ -29,16 +29,22 @@ def writeTable(data, title, reportHandle):
     @type title: str
     @arg reportHandle: Open writeable handle to the report file.
     @type reportHandle: stream
+    @arg minimum: Minimum count.
+    @type minimum: int
     """
     reportHandle.write("%s\ttotal\tforward\treverse\n" % title)
 
-    for i in data:
+    for i in sorted(data, key=lambda x: x[0], reverse=True):
+        if data[i][0] < minimum:
+            break
+
         reportHandle.write("%s\t%i\t%i\t%i\n" % tuple([i] + list(data[i])))
+    #for
 
     reportHandle.write("\n")
 #writeTable
 
-def annotate(allelesHandle, reference, reportHandle):
+def annotate(allelesHandle, reference, reportHandle, minimum):
     """
     Convert a csv files containing alleles and counts to HGVS descriptions of
     alleles, single variants and variant types.
@@ -49,6 +55,8 @@ def annotate(allelesHandle, reference, reportHandle):
     @type reference: str
     @arg reportHandle: Open writeable handle to the report file.
     @type reportHandle: stream
+    @arg minimum: Minimum count.
+    @type minimum: int
     """
     alleles = collections.defaultdict(lambda: numpy.array([0, 0, 0]))
     rawVars = collections.defaultdict(lambda: numpy.array([0, 0, 0]))
@@ -69,9 +77,9 @@ def annotate(allelesHandle, reference, reportHandle):
             #for
     #for
 
-    writeTable(alleles, "allele", reportHandle)
-    writeTable(rawVars, "variant", reportHandle)
-    writeTable(classification, "class", reportHandle)
+    writeTable(alleles, "allele", reportHandle, minimum)
+    writeTable(rawVars, "variant", reportHandle, minimum)
+    writeTable(classification, "class", reportHandle, minimum)
 #annotate
 
 def main():
@@ -88,11 +96,13 @@ def main():
         help="sequence of the reference allele")
     parser.add_argument("-r", dest="report", type=argparse.FileType("w"),
         default=sys.stdout, help="name of the report file")
+    parser.add_argument("-a", dest="minimum", type=int, default=0,
+        help="minimum count (default=%(default)s)")
 
     args = parser.parse_args()
 
     try:
-        annotate(args.alleles, args.reference, args.report)
+        annotate(args.alleles, args.reference, args.report, args.minimum)
     except OSError, error:
         parser.error(error)
 #main
