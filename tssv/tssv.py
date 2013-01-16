@@ -269,7 +269,7 @@ def tssv(fastaHandle, libHandle, reportHandle, path, threshold, minimum):
                 library[i]["counts"][3] += 1
 
             if path:
-                SeqIO.write(record, files[i][classification], "fasta")
+                SeqIO.write([record], files[i][classification], "fasta")
         #for
     #for
 
