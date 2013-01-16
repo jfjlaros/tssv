@@ -36,12 +36,10 @@ def writeTable(data, title, reportHandle, minimum):
 
     for i in sorted(data, key=lambda x: x[0], reverse=True):
         if data[i][0] < minimum:
-            break
+            return
 
         reportHandle.write("%s\t%i\t%i\t%i\n" % tuple([i] + list(data[i])))
     #for
-
-    reportHandle.write("\n")
 #writeTable
 
 def annotate(allelesHandle, reference, reportHandle, minimum):
@@ -78,7 +76,9 @@ def annotate(allelesHandle, reference, reportHandle, minimum):
     #for
 
     writeTable(alleles, "allele", reportHandle, minimum)
+    reportHandle.write("\n")
     writeTable(rawVars, "variant", reportHandle, minimum)
+    reportHandle.write("\n")
     writeTable(classification, "class", reportHandle, minimum)
 #annotate
 
