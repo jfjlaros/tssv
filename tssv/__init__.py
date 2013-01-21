@@ -27,6 +27,6 @@ __version_info__ = ('0', '1', 'dev')
 
 
 __version__ = '.'.join(__version_info__)
-__author__ = 'LUMC, Jeroen F.J. Laros, Jaap W.F. van der Heijden'
-__contact__ = 'j.f.j.laros@@lumc.nl'
+__author__ = 'LUMC, Jeroen F.J. Laros'
+__contact__ = 'j.f.j.laros@lumc.nl'
 __homepage__ = 'http://www.humgen.nl'

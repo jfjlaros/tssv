@@ -12,10 +12,7 @@ import sys
 import numpy
 import argparse
 import collections
-from os import path
 from suds import client
-
-import tssv
 
 URL = "https://mutalyzer.nl/services/?wsdl"
 

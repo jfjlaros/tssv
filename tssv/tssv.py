@@ -26,18 +26,32 @@ from Bio import Seq, SeqIO
 import sg_align
 
 fileNames = {
-    "markers" : "markers.csv"
+    "unknown": "unknown.fa",
+    "markers": "markers.csv",
+    "known"  : "knownalleles.csv",
+    "new"    : "newalleles.csv",
+    "nostart": "nostart.csv",
+    "noend"  : "noend.csv"
 }
 """ Names of the global report files. """
 
 markerFileNames = {
-    "known"        : "known.fa",
-    "new"          : "new.fa",
-    "unknown"      : "unknown.fa",
-    "knownalleles" : "knownalleles.csv",
-    "newalleles"   : "newalleles.csv"
+    "known"       : "known.fa",
+    "new"         : "new.fa",
+    "noend"       : "noend.fa",
+    "nostart"     : "nostart.fa",
+    "knownalleles": "knownalleles.csv",
+    "newalleles"  : "newalleles.csv"
 }
 """ Names of the marker specific report files. """
+
+headers = {
+  "markers"   : "name\tfPaired\trPaired\tfLeft\trLeft\tfRight\trRight\n",
+  "allele"    : "allele\ttotal\tforward\treverse\n",
+  "nostartend": "marker\tforward\treverse\ttotal\n",
+  "overview"  : "marker\tforward\treverse\ttotal\tallele\n"
+}
+""" Headers for various tables."""
 
 def parseLibrary(libHandle, threshold):
     """
@@ -145,6 +159,23 @@ def alignFwRev(reference, referenceRc, pair):
         reference, pair)
 #alignFwRev
 
+def writeTable(table, header, handle):
+    """
+    General function for saving tables.
+
+    @arg table: Table content.
+    @type table: list
+    @arg header: Table header.
+    @type header: str
+    @arg handle: Open writable handle to the output file.
+    @type handle: stream
+    """
+    handle.write(header)
+
+    for i in table:
+        handle.write("%s\n" % '\t'.join(map(str, i)))
+#writeTable
+
 def libTable(library, handle):
     """
     Write the library statistics to a file.
@@ -154,11 +185,8 @@ def libTable(library, handle):
     @arg handle: Open writable handle to the output file.
     @type handle: stream
     """
-    handle.write("name\tfPaired\trPaired\tfLeft\trLeft\tfRight\trRight\n")
-
-    for i in library:
-        handle.write("%s\t%i\t%i\t%i\t%i\t%i\t%i\n" % tuple(
-            [i] + library[i]["pairMatch"] + library[i]["counts"]))
+    writeTable(map(lambda x: [x] + library[x]["pairMatch"] +
+        library[x]["counts"], library), headers["markers"], handle)
 #libTable
 
 def alleleTable(newAl, handle, minimum):
@@ -172,15 +200,16 @@ def alleleTable(newAl, handle, minimum):
     @arg minimum: Minimum count per allele.
     @type minimum: int
     """
-    handle.write("allele\ttotal\tforward\treverse\n")
+    l = []
 
     for i in sorted(newAl, key=lambda x: sum(newAl[x]), reverse=True):
         if sum(newAl[i]) < minimum:
             return
 
-        handle.write("%s\t%i\t%i\t%i\n" % tuple([i] +
-            [sum(newAl[i])] + newAl[i]))
+        l.append([i] + [sum(newAl[i])] + newAl[i])
     #for
+
+    writeTable(l, headers["allele"], handle)
 #alleleTable
 
 def makeReport(total, library, handle, minimum):
@@ -212,6 +241,54 @@ def makeReport(total, library, handle, minimum):
     #for
 #makeReport
 
+def makeOverview(total, library, files, minimum):
+    """
+    Make an overview of the results.
+
+    @arg total: Total number of reads in the FASTA file.
+    @type total: int
+    @arg library: Nested dictionary containing library data.
+    @type library: dict
+    @arg handle: Open writable handle to the report file.
+    @type handle: stream
+    @arg files: Nested dictionary containing writable file handles.
+    @type files: dict
+    @arg minimum: Minimum count per allele.
+    @type minimum: int
+    """
+    known = []
+    new = []
+    noStart = []
+    noEnd = []
+
+    for i in library:
+        for j in library[i]["known"]:
+            fr = library[i]["known"][j]
+            known.append([i] + fr + [sum(fr), j])
+        #for
+        for j in library[i]["new"]:
+            fr = library[i]["new"][j]
+            new.append([i] + fr + [sum(fr), j])
+        #for
+
+        noStart.append([i,
+            library[i]["counts"][0] - library[i]["pairMatch"][0],
+            library[i]["counts"][1] - library[i]["pairMatch"][1]])
+        noEnd.append([i,
+            library[i]["counts"][2] - library[i]["pairMatch"][0],
+            library[i]["counts"][3] - library[i]["pairMatch"][1]])
+    #for
+
+    writeTable(sorted(known, key=lambda x: (x[0], x[4])), headers["overview"],
+        files["known"])
+    writeTable(sorted(new, key=lambda x: (x[0], x[3])), headers["overview"],
+        files["new"])
+    writeTable(map(lambda x: x + [sum(x[1:])], sorted(noStart)),
+        headers["nostartend"], files["nostart"])
+    writeTable(map(lambda x: x + [sum(x[1:])], sorted(noEnd)),
+        headers["nostartend"], files["noend"])
+#makeOverview
+
 def tssv(fastaHandle, libHandle, reportHandle, path, threshold, minimum):
     """
     Do the short structural variation analysis.
@@ -238,11 +315,29 @@ def tssv(fastaHandle, libHandle, reportHandle, path, threshold, minimum):
     for record in SeqIO.parse(fastaHandle, "fasta"):
         ref = [str(record.seq), Seq.reverse_complement(str(record.seq))]
         total += 1
+        unknown = True
 
         for i in library:
             alignments = alignFwRev(ref[0], ref[1], library[i]["flanks"])
             scores = map(lambda x: x[0][0] + x[1][0], alignments)
-            classification = "unknown"
+            classification = ""
+
+            if alignments[0][0][0] <= library[i]["thresholds"][0]:
+                library[i]["counts"][0] += 1
+                classification = "noend"
+            #if
+            if alignments[0][1][0] <= library[i]["thresholds"][1]:
+                library[i]["counts"][2] += 1
+                classification = "nostart"
+            #if
+            if alignments[1][0][0] <= library[i]["thresholds"][0]:
+                library[i]["counts"][1] += 1
+                classification = "noend"
+            #if
+            if alignments[1][1][0] <= library[i]["thresholds"][1]:
+                library[i]["counts"][3] += 1
+                classification = "nostart"
+            #if
 
             if min(scores) <= library[i]["threshold"]: # A matching pair.
                 hit = 0
@@ -259,18 +354,16 @@ def tssv(fastaHandle, libHandle, reportHandle, path, threshold, minimum):
                 library[i][classification][pat][hit] += 1
             #if
 
-            if alignments[0][0][0] <= library[i]["thresholds"][0]:
-                library[i]["counts"][0] += 1
-            if alignments[0][1][0] <= library[i]["thresholds"][1]:
-                library[i]["counts"][2] += 1
-            if alignments[1][0][0] <= library[i]["thresholds"][0]:
-                library[i]["counts"][1] += 1
-            if alignments[1][1][0] <= library[i]["thresholds"][1]:
-                library[i]["counts"][3] += 1
+            if classification:
+                unknown = False
 
-            if path:
-                SeqIO.write([record], files[i][classification], "fasta")
+                if path:
+                    SeqIO.write([record], files[i][classification], "fasta")
+            #if
         #for
+
+        if path and unknown:
+            SeqIO.write([record], files["unknown"], "fasta")
     #for
 
     if path:
@@ -280,6 +373,8 @@ def tssv(fastaHandle, libHandle, reportHandle, path, threshold, minimum):
             alleleTable(library[i]["known"], files[i]["knownalleles"], minimum)
             alleleTable(library[i]["new"], files[i]["newalleles"], minimum)
         #for
+
+        makeOverview(total, library, files, minimum)
     #if
 
     makeReport(total, library, reportHandle, minimum)
