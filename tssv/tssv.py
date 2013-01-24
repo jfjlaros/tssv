@@ -31,7 +31,8 @@ fileNames = {
     "known"  : "knownalleles.csv",
     "new"    : "newalleles.csv",
     "nostart": "nostart.csv",
-    "noend"  : "noend.csv"
+    "noend"  : "noend.csv",
+    "summary": "summary.csv"
 }
 """ Names of the global report files. """
 
@@ -169,35 +170,24 @@ def writeTable(table, header, handle):
     @arg handle: Open writable handle to the output file.
     @type handle: stream
     """
-    handle.write(header)
+    if header:
+        handle.write(header)
 
     for i in table:
         handle.write("%s\n" % '\t'.join(map(str, i)))
 #writeTable
 
-def libTable(library, handle):
+def alleleTable(newAl, minimum):
     """
-    Write the library statistics to a file.
-
-    @arg library: Nested dictionary containing library data.
-    @type library: dict
-    @arg handle: Open writable handle to the output file.
-    @type handle: stream
-    """
-    writeTable(map(lambda x: [x] + library[x]["pairMatch"] +
-        library[x]["counts"], library), headers["markers"], handle)
-#libTable
-
-def alleleTable(newAl, handle, minimum):
-    """
-    Write the allele statistics to a file.
+    Make an allele statistics table.
 
     @arg newAl: Dictionary with count data of new alleles.
     @type newAl: dict
-    @arg handle: Open writable handle to the output file.
-    @type handle: stream
     @arg minimum: Minimum count per allele.
     @type minimum: int
+
+    @returns: Allele statistics table.
+    @rtype: list
     """
     l = []
 
@@ -208,57 +198,35 @@ def alleleTable(newAl, handle, minimum):
         l.append([i] + [sum(newAl[i])] + newAl[i])
     #for
 
-    writeTable(l, headers["allele"], handle)
+    return l
 #alleleTable
 
-def makeReport(total, library, handle, minimum):
+def makeTables(total, unrecognised, library, minimum):
     """
-    Make an overview of the results.
+    Make overview tables of the results.
 
     @arg total: Total number of reads in the FASTA file.
     @type total: int
+    @arg unrecognised: Number of unrecognised reads in.
+    @type unrecognised: int
     @arg library: Nested dictionary containing library data.
     @type library: dict
-    @arg handle: Open writable handle to the report file.
-    @type handle: stream
     @arg minimum: Minimum count per allele.
     @type minimum: int
-    """
-    handle.write("total reads: %i\n" % total)
-    handle.write("matched pairs: %i\n" % 
-        sum(map(lambda x: sum(library[x]["pairMatch"]), library)))
-    handle.write("new alleles: %i\n\n" % 
-        sum(map(lambda x: len(library[x]["new"]), library)))
 
-    libTable(library, handle)
-
-    for i in library:
-        handle.write("\nknown alleles for marker %s:\n" % i)
-        alleleTable(library[i]["known"], handle, minimum)
-        handle.write("\nnew alleles for marker %s:\n" % i)
-        alleleTable(library[i]["new"], handle, minimum)
-    #for
-#makeReport
-
-def makeOverview(total, library, files, minimum):
-    """
-    Make an overview of the results.
-
-    @arg total: Total number of reads in the FASTA file.
-    @type total: int
-    @arg library: Nested dictionary containing library data.
-    @type library: dict
-    @arg handle: Open writable handle to the report file.
-    @type handle: stream
-    @arg files: Nested dictionary containing writable file handles.
-    @type files: dict
-    @arg minimum: Minimum count per allele.
-    @type minimum: int
+    @returns: A nested dictionary containing overview tables.
+    @rtype: dict
     """
     known = []
     new = []
     noStart = []
     noEnd = []
+
+    tables = {
+        "library":  map(lambda x: [x] + library[x]["pairMatch"] +
+            library[x]["counts"], library),
+        "allele" : collections.defaultdict(dict)
+    }
 
     for i in library:
         for j in library[i]["known"]:
@@ -271,22 +239,80 @@ def makeOverview(total, library, files, minimum):
         #for
 
         noStart.append([i,
-            library[i]["counts"][0] - library[i]["pairMatch"][0],
-            library[i]["counts"][1] - library[i]["pairMatch"][1]])
-        noEnd.append([i,
             library[i]["counts"][2] - library[i]["pairMatch"][0],
             library[i]["counts"][3] - library[i]["pairMatch"][1]])
+        noEnd.append([i,
+            library[i]["counts"][0] - library[i]["pairMatch"][0],
+            library[i]["counts"][1] - library[i]["pairMatch"][1]])
+
+        tables["allele"][i]["known"] = alleleTable(library[i]["known"],
+            minimum)
+        tables["allele"][i]["new"] = alleleTable(library[i]["new"], minimum)
     #for
 
-    writeTable(sorted(known, key=lambda x: (x[0], x[4])), headers["overview"],
-        files["known"])
-    writeTable(sorted(new, key=lambda x: (x[0], x[3])), headers["overview"],
-        files["new"])
-    writeTable(map(lambda x: x + [sum(x[1:])], sorted(noStart)),
-        headers["nostartend"], files["nostart"])
-    writeTable(map(lambda x: x + [sum(x[1:])], sorted(noEnd)),
-        headers["nostartend"], files["noend"])
-#makeOverview
+    tables["known"] = sorted(known, key=lambda x: (x[0], x[4]))
+    tables["new"] = sorted(new, key=lambda x: (x[0], x[3]))
+    tables["nostart"] = map(lambda x: x + [sum(x[1:])], sorted(noStart))
+    tables["noend"] = map(lambda x: x + [sum(x[1:])], sorted(noEnd))
+
+    tables["summary"] = [
+        ["total reads", total],
+        ["matched pairs", sum(map(lambda x: sum(library[x]["pairMatch"]),
+            library))],
+        ["new alleles", sum(map(lambda x: len(library[x]["new"]), library))],
+        ["no start", sum(map(lambda x: x[3], tables["nostart"]))],
+        ["no end", sum(map(lambda x: x[3], tables["noend"]))],
+        ["unrecognised reads", unrecognised],
+    ]
+
+    return tables
+#makeTables
+
+def makeReport(tables, handle):
+    """
+    Make an overview of the results.
+
+    @arg tables: A nested dictionary containing overview tables.
+    @type tables: dict
+    @arg handle: Open writable handle to the report file.
+    @type handle: stream
+    """
+    writeTable(tables["summary"], "", handle)
+    handle.write("\n")
+
+    writeTable(tables["library"], headers["markers"], handle)
+
+    for i in tables["allele"]:
+        handle.write("\nknown alleles for marker %s:\n" % i)
+        writeTable(tables["allele"][i]["known"], headers["allele"], handle)
+        handle.write("\nnew alleles for marker %s:\n" % i)
+        writeTable(tables["allele"][i]["new"], headers["allele"], handle)
+    #for
+#makeReport
+
+def writeFiles(tables, files):
+    """
+    Write the overview tables to the appropriate files.
+
+    @arg tables: A nested dictionary containing overview tables.
+    @type tables: dict
+    @arg files: Nested dictionary containing writable file handles.
+    @type files: dict
+    """
+    writeTable(tables["summary"], "", files["summary"])
+    writeTable(tables["library"], headers["markers"], files["markers"])
+    writeTable(tables["known"], headers["overview"], files["known"])
+    writeTable(tables["new"], headers["overview"], files["new"])
+    writeTable(tables["nostart"], headers["nostartend"], files["nostart"])
+    writeTable(tables["noend"], headers["nostartend"], files["noend"])
+
+    for i in tables["allele"]:
+        writeTable(tables["allele"][i]["known"], headers["allele"],
+            files[i]["knownalleles"])
+        writeTable(tables["allele"][i]["new"], headers["allele"],
+            files[i]["newalleles"])
+    #for
+#writeFiles
 
 def tssv(fastaHandle, libHandle, reportHandle, path, threshold, minimum):
     """
@@ -306,6 +332,7 @@ def tssv(fastaHandle, libHandle, reportHandle, path, threshold, minimum):
     @type minimum: int
     """
     total = 0
+    unrecognised = 0
     library = parseLibrary(libHandle, threshold)
 
     if path:
@@ -343,9 +370,7 @@ def tssv(fastaHandle, libHandle, reportHandle, path, threshold, minimum):
             #if
 
             if (matches[0] and matches[1]) or (matches[2] and matches[3]):
-                hit = 0
-                if matches[2] and matches[3]: # Match reverse.
-                    hit = 1
+                hit = int(matches[2] and matches[3])
 
                 library[i]["pairMatch"][hit] += 1
                 pat = ref[hit][alignments[hit][0][1]:alignments[hit][1][1]]
@@ -365,22 +390,20 @@ def tssv(fastaHandle, libHandle, reportHandle, path, threshold, minimum):
             #if
         #for
 
-        if path and unknown:
-            SeqIO.write([record], files["unknown"], "fasta")
+        if unknown:
+            unrecognised += 1
+
+            if path:
+                SeqIO.write([record], files["unknown"], "fasta")
+        #if
     #for
 
+    tables = makeTables(total, unrecognised, library, minimum)
+
     if path:
-        libTable(library, files["markers"])
+        writeFiles(tables, files)
 
-        for i in library:
-            alleleTable(library[i]["known"], files[i]["knownalleles"], minimum)
-            alleleTable(library[i]["new"], files[i]["newalleles"], minimum)
-        #for
-
-        makeOverview(total, library, files, minimum)
-    #if
-
-    makeReport(total, library, reportHandle, minimum)
+    makeReport(tables, reportHandle)
 #tssv
 
 def main():
