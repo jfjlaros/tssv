@@ -48,8 +48,8 @@ markerFileNames = {
 headers = {
   "markers"   : "name\tfPaired\trPaired\tfLeft\trLeft\tfRight\trRight\n",
   "allele"    : "allele\ttotal\tforward\treverse\n",
-  "nostartend": "marker\tforward\treverse\ttotal\n",
-  "overview"  : "marker\tforward\treverse\ttotal\tallele\n"
+  "nostartend": "name\tforward\treverse\ttotal\n",
+  "overview"  : "name\tforward\treverse\ttotal\tallele\n"
 }
 """ Headers for various tables."""
 
@@ -81,7 +81,6 @@ def parseLibrary(libHandle, threshold):
             "pairMatch": [0, 0],
             "thresholds": [int(math.ceil(len(i[1]) * threshold)),
                 int(math.ceil(len(i[2]) * threshold))],
-            "threshold": int(math.ceil((len(i[1]) + len(i[2])) * threshold)),
             "regExp": re.compile(pattern),
             "new": collections.defaultdict(lambda: [0, 0]),
             "known": collections.defaultdict(lambda: [0, 0])
@@ -319,29 +318,33 @@ def tssv(fastaHandle, libHandle, reportHandle, path, threshold, minimum):
 
         for i in library:
             alignments = alignFwRev(ref[0], ref[1], library[i]["flanks"])
-            scores = map(lambda x: x[0][0] + x[1][0], alignments)
+            matches = [False, False, False, False]
             classification = ""
 
             if alignments[0][0][0] <= library[i]["thresholds"][0]:
                 library[i]["counts"][0] += 1
                 classification = "noend"
+                matches[0] = True
             #if
             if alignments[0][1][0] <= library[i]["thresholds"][1]:
                 library[i]["counts"][2] += 1
                 classification = "nostart"
+                matches[1] = True
             #if
             if alignments[1][0][0] <= library[i]["thresholds"][0]:
                 library[i]["counts"][1] += 1
                 classification = "noend"
+                matches[2] = True
             #if
             if alignments[1][1][0] <= library[i]["thresholds"][1]:
                 library[i]["counts"][3] += 1
                 classification = "nostart"
+                matches[3] = True
             #if
 
-            if min(scores) <= library[i]["threshold"]: # A matching pair.
+            if (matches[0] and matches[1]) or (matches[2] and matches[3]):
                 hit = 0
-                if scores[0] > scores[1]:              # Match reverse.
+                if matches[2] and matches[3]: # Match reverse.
                     hit = 1
 
                 library[i]["pairMatch"][hit] += 1
