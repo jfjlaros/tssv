@@ -140,25 +140,6 @@ def alignPair(reference, referenceRc, pair):
         rightAl[1])
 #alignPair
 
-def alignFwRev(reference, referenceRc, pair):
-    """
-    Align a pair of markers to both the forward and the reverse complement of
-    a sequence. Return the scores and positions for all four alignments.
-
-    @arg reference: Reference sequence to align to.
-    @type reference: str
-    @arg referenceRc: Reverse complement of the reference sequence.
-    @type referenceRc: str
-    @arg pair: A pair (forward, reverse) of markers to align.
-    @type pair: list[str, str]
-
-    @returns: Two tuples (score, position) of the alignments.
-    @rtype: tuple(tuple(int, int), tuple(int, int))
-    """
-    return alignPair(reference, referenceRc, pair), alignPair(referenceRc,
-        reference, pair)
-#alignFwRev
-
 def writeTable(table, header, handle):
     """
     General function for saving tables.
@@ -173,9 +154,33 @@ def writeTable(table, header, handle):
     if header:
         handle.write(header)
 
-    for i in table:
-        handle.write("%s\n" % '\t'.join(map(str, i)))
+    if table:
+        for i in table:
+            handle.write("%s\n" % '\t'.join(map(str, i)))
 #writeTable
+
+def rewrite(regExp, pattern):
+    """
+    Make a pattern that matches a regular expression more human readable.
+
+    @arg regExp: A compiled regular expression object.
+    @type regExp: object
+    @arg pattern: A pattern that matches {regExp}.
+    @type pattern: str
+
+    @returns: A human readable version of {pattern}.
+    @rtype: str
+    """
+    newPattern = ""
+    match = regExp.match(pattern)
+    regs = [(0, 0)] + list(match.regs[1:])
+
+    for i in range(len(regs) - 1):
+        newPattern += "%s(%i)" % (match.group(i + 1),
+            (regs[i + 1][1] - regs[i][1]) / (regs[i + 1][1] - regs[i + 1][0]))
+
+    return newPattern
+#rewrite
 
 def alleleTable(newAl, minimum):
     """
@@ -344,7 +349,8 @@ def tssv(fastaHandle, libHandle, reportHandle, path, threshold, minimum):
         unknown = True
 
         for i in library:
-            alignments = alignFwRev(ref[0], ref[1], library[i]["flanks"])
+            alignments = (alignPair(ref[0], ref[1], library[i]["flanks"]),
+                alignPair(ref[1], ref[0], library[i]["flanks"]))
             matches = [False, False, False, False]
             classification = ""
 
@@ -399,6 +405,14 @@ def tssv(fastaHandle, libHandle, reportHandle, path, threshold, minimum):
     #for
 
     tables = makeTables(total, unrecognised, library, minimum)
+
+    # Make the known alleles more human readable.
+    for i in tables["allele"]:
+        if tables["allele"][i]["known"]:
+            for j in tables["allele"][i]["known"]:
+                j[0] = rewrite(library[i]["regExp"], j[0])
+    for i in tables["known"]:
+        i[4] = rewrite(library[i[0]]["regExp"], i[4])
 
     if path:
         writeFiles(tables, files)
