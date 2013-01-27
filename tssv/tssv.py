@@ -174,10 +174,12 @@ def rewrite(regExp, pattern):
     newPattern = ""
     match = regExp.match(pattern)
     regs = [(0, 0)] + list(match.regs[1:])
+    print match.groups(), regs
 
     for i in range(len(regs) - 1):
-        newPattern += "%s(%i)" % (match.group(i + 1),
-            (regs[i + 1][1] - regs[i][1]) / (regs[i + 1][1] - regs[i + 1][0]))
+        if match.group(i + 1):
+            newPattern += "%s(%i)" % (match.group(i + 1), (regs[i + 1][1] -
+                regs[i][1]) / (regs[i + 1][1] - regs[i + 1][0]))
 
     return newPattern
 #rewrite
@@ -408,9 +410,9 @@ def tssv(fastaHandle, libHandle, reportHandle, path, threshold, minimum):
 
     # Make the known alleles more human readable.
     for i in tables["allele"]:
-        if tables["allele"][i]["known"]:
-            for j in tables["allele"][i]["known"]:
-                j[0] = rewrite(library[i]["regExp"], j[0])
+        #if tables["allele"][i]["known"]:
+        for j in tables["allele"][i]["known"]:
+            j[0] = rewrite(library[i]["regExp"], j[0])
     for i in tables["known"]:
         i[4] = rewrite(library[i[0]]["regExp"], i[4])
 
