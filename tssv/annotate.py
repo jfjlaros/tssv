@@ -58,8 +58,10 @@ def annotate(allelesHandle, reference, reportHandle, minimum):
     classification = collections.defaultdict(lambda: numpy.array([0, 0, 0]))
     service = client.Client(URL).service
 
-    data = map(lambda x: x.strip().split('\t'), allelesHandle.readlines()[1:])
+    data = map(lambda x: x.strip('\n').split('\t'),
+        allelesHandle.readlines()[1:])
     for i in data:
+        print i
         alleleDescription = service.descriptionExtract(reference=reference,
             observed=i[0])
         encountered = map(int, (i[1:]))
