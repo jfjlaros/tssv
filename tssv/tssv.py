@@ -174,7 +174,6 @@ def rewrite(regExp, pattern):
     newPattern = ""
     match = regExp.match(pattern)
     regs = [(0, 0)] + list(match.regs[1:])
-    print match.groups(), regs
 
     for i in range(len(regs) - 1):
         if match.group(i + 1):
