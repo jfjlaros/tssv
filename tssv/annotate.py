@@ -61,7 +61,6 @@ def annotate(allelesHandle, reference, reportHandle, minimum):
     data = map(lambda x: x.strip('\n').split('\t'),
         allelesHandle.readlines()[1:])
     for i in data:
-        print i
         alleleDescription = service.descriptionExtract(reference=reference,
             observed=i[0])
         encountered = map(int, (i[1:]))
