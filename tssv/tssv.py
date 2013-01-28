@@ -257,7 +257,7 @@ def makeTables(total, unrecognised, library, minimum):
     #for
 
     tables["known"] = sorted(known, key=lambda x: (x[0], x[4]))
-    tables["new"] = sorted(new, key=lambda x: (x[0], x[3]))
+    tables["new"] = sorted(new, key=lambda x: (x[0], x[3]), reverse=True)
     tables["nostart"] = map(lambda x: x + [sum(x[1:])], sorted(noStart))
     tables["noend"] = map(lambda x: x + [sum(x[1:])], sorted(noEnd))
 
@@ -265,7 +265,9 @@ def makeTables(total, unrecognised, library, minimum):
         ["total reads", total],
         ["matched pairs", sum(map(lambda x: sum(library[x]["pairMatch"]),
             library))],
-        ["new alleles", sum(map(lambda x: len(library[x]["new"]), library))],
+        ["new alleles",  sum(map(lambda x: x[3], tables["new"]))],
+        ["new unique alleles", sum(map(lambda x: len(library[x]["new"]),
+            library))],
         ["no start", sum(map(lambda x: x[3], tables["nostart"]))],
         ["no end", sum(map(lambda x: x[3], tables["noend"]))],
         ["unrecognised reads", unrecognised],
