@@ -270,7 +270,7 @@ def makeTables(total, unrecognised, library, minimum):
             library))],
         ["no start", sum(map(lambda x: x[3], tables["nostart"]))],
         ["no end", sum(map(lambda x: x[3], tables["noend"]))],
-        ["unrecognised reads", unrecognised],
+        ["unrecognised reads", unrecognised]
     ]
 
     return tables
@@ -293,7 +293,16 @@ def makeReport(tables, handle):
     for i in tables["allele"]:
         handle.write("\nknown alleles for marker %s:\n" % i)
         writeTable(tables["allele"][i]["known"], headers["allele"], handle)
-        handle.write("\nnew alleles for marker %s:\n" % i)
+
+        meanLength = 0
+        sumOfLengths = sum(map(lambda x: len(x[0]) * x[1],
+            tables["allele"][i]["new"]))
+        numberOfAlleles = sum(map(lambda x: x[1], tables["allele"][i]["new"]))
+        if numberOfAlleles:
+            meanLength = sumOfLengths / numberOfAlleles
+
+        handle.write("\nnew alleles for marker %s (mean length %i):\n" % (i,
+            meanLength))
         writeTable(tables["allele"][i]["new"], headers["allele"], handle)
     #for
 #makeReport
