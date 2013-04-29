@@ -26,7 +26,7 @@ setup(
     license="MIT License",
     platforms=["any"],
     packages=["tssv"],
-    requires=requires,
+    install_requires=requires,
     entry_points = {
         "console_scripts": [
             "tssv = tssv.tssv:main",
