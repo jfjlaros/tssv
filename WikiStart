@@ -1,0 +1,29 @@
+= TSSV documentation and information. =
+TSSV is a program that does targeted characterisation of short structural variation. It can be used for STR analysis, or any other type of targeted analysis. It characterises any variation between a set of user-defined markers.
+
+== Requirements. ==
+ * You need a Python interpreter (versions 2.6 or higher).
+ * The argparse and BioPython libraries should be installed.
+
+== Releases. ==
+Version 0.1: [attachment:tssv_0.1.tgz]
+
+See the [wiki:Changelog changelog] for a record of changes made to TSSV per release version.
+
+== Usage. ==
+The '''tssv''' program does targeted characterisation of short structural variation. See the help ('''-h''') of this program for a full description of the parameters.
+
+== Feedback ==
+'''Please submit feature requests and error reports using the TSSV bug tracking system'''
+
+Click "View Tickets" and select "Active tickets" to see the bugs and feature requests, which have been submitted, but are not yet solved.[[BR]]
+"All tickets" will also show solved bugs and implemented feature requests.
+
+Please click "New ticket" in order to submit bugs or feature requests.
+
+Thanks! [[BR]]
+''The TSSV Team''
+
+[TracDocumentation TracDocumentation]
+
+For a complete list of local wiki pages, see TitleIndex.
