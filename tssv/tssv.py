@@ -173,12 +173,14 @@ def rewrite(regExp, pattern):
     """
     newPattern = ""
     match = regExp.match(pattern)
-    regs = [(0, 0)] + list(match.regs[1:])
+
+    regs = [((0, 0), None)] + filter(lambda y: y != ((-1, -1), None),
+        map(lambda x: (match.regs[x], match.group(x)),
+        range(1, len(match.regs))))
 
     for i in range(len(regs) - 1):
-        if match.group(i + 1):
-            newPattern += "%s(%i)" % (match.group(i + 1), (regs[i + 1][1] -
-                regs[i][1]) / (regs[i + 1][1] - regs[i + 1][0]))
+        newPattern += "%s(%i)" % (regs[i + 1][1], (regs[i + 1][0][1] -
+            regs[i][0][1]) / (regs[i + 1][0][1] - regs[i + 1][0][0]))
 
     return newPattern
 #rewrite
