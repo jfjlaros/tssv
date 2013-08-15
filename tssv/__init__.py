@@ -23,8 +23,7 @@ Licensed under the MIT license, see the LICENSE file.
 
 RELEASE = False
 
-__version_info__ = ('0', '2', 'dev')
-
+__version_info__ = ('0', '2', '0')
 
 __version__ = '.'.join(__version_info__)
 __author__ = 'LUMC, Jeroen F.J. Laros'
