@@ -49,3 +49,14 @@ the parameters.
 Clicking "All" will also show solved bugs and implemented feature requests.
 
 Please click "New Issue" in order to submit bugs or feature requests.
+
+== References ==
+Seyed Yahya Anvar, Kristiaan J. van der Gaag, Jaap W. F. van der Heijden,
+Marcel H. A. M. Veltrop, Rolf H. A. M. Vossen, Rick H. de Leeuw, Cor Breukel,
+Henk P. J. Buermans, J. Sjef Verbeek, Peter de Knijff, Johan T. den Dunnen, and
+Jeroen F. J. Laros, '''TSSV: a tool for characterization of complex allelic
+variants in pure and mixed genomes.''' Bioinformatics, first published online
+February 13, 2014. doi:10.1093/bioinformatics/btu068
+
+[http://bioinformatics.oxfordjournals.org/content/early/2014/02/24/bioinformatics.btu068.abstract abstract],
+[http://bioinformatics.oxfordjournals.org/content/early/2014/02/24/bioinformatics.btu068.full.pdf+html full text]
