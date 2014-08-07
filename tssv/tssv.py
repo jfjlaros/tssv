@@ -1,20 +1,5 @@
 #!/usr/bin/env python
 
-"""
-Targeted characterisation of short structural variation.
-
-
-The library file consists of four tab-separated columns:
-- name of the marker pair
-- marker 1
-- marker 2
-- space-separated description of the expected pattern
-
-If the -d option is used, a folder will be created containing the library
-table and per marker a subfolder containing the new alleles and split FASTA
-files.
-"""
-
 import os
 import re
 import sys
@@ -23,7 +8,7 @@ import argparse
 import collections
 from Bio import Seq, SeqIO
 
-import sg_align
+from . import ProtectedFileType, doc_split, usage, version, sg_align
 
 fileNames = {
     "unknown": "unknown.fa",
@@ -437,7 +422,6 @@ def main():
     """
     Main entry point.
     """
-    usage = __doc__.split("\n\n\n")
     parser = argparse.ArgumentParser(description=usage[0], epilog=usage[1],
         formatter_class=argparse.RawDescriptionHelpFormatter)
 
@@ -452,6 +436,7 @@ def main():
     parser.add_argument("-d", dest="path", type=str, help="output directory")
     parser.add_argument("-a", dest="minimum", type=int, default=0,
         help="minimum count per allele (default=%(default)s)")
+    parser.add_argument('-v', action="version", version=version(parser.prog))
 
     args = parser.parse_args()
 
