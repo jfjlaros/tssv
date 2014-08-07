@@ -201,7 +201,7 @@ def alleleTable(newAl, minimum):
 
     for i in sorted(newAl, key=lambda x: sum(newAl[x]), reverse=True):
         if sum(newAl[i]) < minimum:
-            return
+            return []
 
         l.append([i] + [sum(newAl[i])] + newAl[i])
     #for
@@ -422,7 +422,6 @@ def tssv(fastaHandle, libHandle, reportHandle, path, threshold, minimum):
 
     # Make the known alleles more human readable.
     for i in tables["allele"]:
-        #if tables["allele"][i]["known"]:
         for j in tables["allele"][i]["known"]:
             j[0] = rewrite(library[i]["regExp"], j[0])
     for i in tables["known"]:
