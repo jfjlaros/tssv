@@ -196,6 +196,21 @@ def allele_table(new_allele, minimum):
     return l
 #allele_table
 
+def summary_table(allele, minimum):
+    """
+    Filter one of the global allele tables.
+
+    :arg allele: List with count data of alleles.
+    :type allele: list
+    :arg minimum: Minimum count per allele.
+    :type minimum: int
+
+    :returns: Allele statistics table.
+    :rtype: list
+    """
+    return filter(lambda x: x[3] >= minimum, allele)
+#summary_table
+
 def make_tables(total, unrecognised, library, minimum):
     """
     Make overview tables of the results.
@@ -245,8 +260,10 @@ def make_tables(total, unrecognised, library, minimum):
         tables["allele"][i]["new"] = allele_table(library[i]["new"], minimum)
     #for
 
-    tables["known"] = sorted(known, key=lambda x: (x[0], x[4]))
-    tables["new"] = sorted(new, key=lambda x: (x[0], x[3]), reverse=True)
+    tables["known"] = sorted(summary_table(known, minimum),
+        key=lambda x: (x[0], x[4]))
+    tables["new"] = sorted(summary_table(new, minimum),
+        key=lambda x: (x[0], x[3]), reverse=True)
     tables["nostart"] = map(lambda x: x + [sum(x[1:])], sorted(no_start))
     tables["noend"] = map(lambda x: x + [sum(x[1:])], sorted(no_end))
 
@@ -255,8 +272,8 @@ def make_tables(total, unrecognised, library, minimum):
         ["matched pairs", sum(map(lambda x: sum(library[x]["pair_match"]),
             library))],
         ["new alleles",  sum(map(lambda x: x[3], tables["new"]))],
-        ["new unique alleles", sum(map(lambda x: len(library[x]["new"]),
-            library))],
+        ["new unique alleles", sum(map(lambda x:
+            len(allele_table(library[x]["new"], minimum)), library))],
         ["no start", sum(map(lambda x: x[3], tables["nostart"]))],
         ["no end", sum(map(lambda x: x[3], tables["noend"]))],
         ["unrecognised reads", unrecognised]

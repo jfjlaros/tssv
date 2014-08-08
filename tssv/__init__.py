@@ -22,7 +22,7 @@ Licensed under the MIT license, see the LICENSE file.
 import argparse
 import os
 
-__version_info__ = ('0', '2', '1')
+__version_info__ = ('0', '2', '2')
 
 __version__ = '.'.join(__version_info__)
 __author__ = 'LUMC, Jeroen F.J. Laros'
