@@ -3,7 +3,6 @@
 */
 
 #include <string.h>
-#include <stdio.h>
 #include <stdlib.h>
 
 #include "sg_align.h"
@@ -110,7 +109,7 @@ It is assumed that the number of rows is larger than the number of columns.
 :type y_size: int
 
 :returns: The minimum distance and its row number.
-:rtype: int *
+:rtype: alignment
 */
 alignment _find_min(int **matrix, int x_size, int y_size) {
   alignment a;
@@ -124,7 +123,6 @@ alignment _find_min(int **matrix, int x_size, int y_size) {
       a.position = x;
     }//if
 
-  //printf("%i %i\n", a.distance, a.position);
   return a;
 }//_find_min
 
@@ -137,30 +135,19 @@ Do a semi-global alignment of {seq2} to {seq1}.
 :type seq2: char *
 
 :returns: The minimum distance and its row number.
-:rtype: int *
+:rtype: alignment
 */
 alignment align(char *seq1, char *seq2) {
   alignment a;
   int **matrix,
-      //*minimum,
       x_size = strlen(seq1) + 1,
       y_size = strlen(seq2) + 1;
   int i, j;
 
-  //printf("%s %i\n%s %i\n", seq1, x_size, seq2, y_size);
   matrix = _make_matrix(x_size, y_size);
   _align(matrix, x_size, y_size, seq1, seq2);
-
-  //for (i = 0; i < x_size; i++) {
-  //  for (j = 0; j < y_size; j++)
-  //    printf("%i", matrix[i][j]);
-  //  printf("\n");
-  //}//for
-
   a = _find_min(matrix, x_size, y_size);
   _free_matrix(matrix, x_size);
-
-  //printf("%i %i\n", a.distance, a.position);
 
   return a;
 }//align
