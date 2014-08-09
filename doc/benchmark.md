@@ -51,7 +51,7 @@ The raw run times:
 
 ## Results
 Here we see the plot for the raw run times:
-[][benchmark.png]
+[](benchmark.png)
 
 And the plot for the speedup:
-[][speed.png]
+[](speed.png)
