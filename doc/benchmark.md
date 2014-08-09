@@ -50,8 +50,8 @@ The raw run times:
     plot "speed.dat" with linespoints ls 1
 
 ## Results
-Here we see the plot for the raw run times:
-![][benchmark.png]
+Here we see the plot for the raw run times:  
+![](benchmark.png)
 
-And the plot for the speedup:
-![][speed.png]
+And the plot for the speedup:  
+![](speed.png)
