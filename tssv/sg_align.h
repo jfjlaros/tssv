@@ -1,1 +1,6 @@
-int *align(char *, char *);
+typedef struct {
+  int distance,
+      position;
+} alignment;
+
+alignment align(char *, char *);

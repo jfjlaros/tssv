@@ -121,9 +121,10 @@ def align_pair(reference, reference_rc, pair):
     :rtype: tuple(int, int)
     """
     right_alignment = sg_align.align(reference_rc, pair[1])
+    left_alignment = sg_align.align(reference, pair[0])
 
-    return sg_align.align(reference, pair[0]), (right_alignment[0],
-        len(reference) - right_alignment[1])
+    return ((left_alignment.distance, left_alignment.position),
+        (right_alignment.distance, len(reference) - right_alignment.position))
 #align_pair
 
 def write_table(table, header, handle):
