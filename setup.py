@@ -1,5 +1,6 @@
 import sys
 from setuptools import setup
+from distutils.core import Extension
 
 if sys.version_info < (2, 6):
     raise Exception("TSSV requires Python 2.6 or higher.")
@@ -17,6 +18,9 @@ import tssv as distmeta
 
 setup(
     name="tssv",
+    ext_modules=[Extension('_sg_align', ['tssv/sg_align.i',
+        'tssv/sg_align.c'], swig_opts=[])],
+    py_modules=['tssv.sg_align'],
     version=distmeta.__version__,
     description="Targeted characterisation of short structural variation.",
     long_description=distmeta.__doc__,
