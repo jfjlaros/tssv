@@ -1,5 +1,5 @@
 /*
-  Library with functions for a semi-global alignment.
+Library with functions for a semi-global alignment.
 */
 
 #include <string.h>
