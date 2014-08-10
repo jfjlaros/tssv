@@ -142,7 +142,6 @@ alignment align(char *seq1, char *seq2) {
   int **matrix,
       x_size = strlen(seq1) + 1,
       y_size = strlen(seq2) + 1;
-  int i, j;
 
   matrix = _make_matrix(x_size, y_size);
   _align(matrix, x_size, y_size, seq1, seq2);
