@@ -8,6 +8,12 @@ Development of TSSV is hosted
 
 
 ## Easy installation
+TSSV depends on `swig` and `gcc` for the compilation of one of the core
+libraries. Also a package that provides `Python.h` should be installed. For
+Debian based systems, the following command will install these packages:
+
+    apt-get install libpython-dev swig gcc
+
 If you have installed the `pip` package installer, you can easily install
 TSSV by typing:
 
@@ -25,6 +31,8 @@ installed:
   be installed.
 
 ## Releases
+[0.2.3](https://pypi.python.org/packages/source/t/tssv/tssv-0.2.3.tar.gz) big
+  performance boost, [more](doc/benchmark.md) information.
 [0.2.2](https://pypi.python.org/packages/source/t/tssv/tssv-0.2.2.tar.gz)  
 [0.2.1](https://pypi.python.org/packages/source/t/tssv/tssv-0.2.1.tar.gz)  
 [0.2.0](https://pypi.python.org/packages/source/t/tssv/tssv-0.2.0.tar.gz)  
