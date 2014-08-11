@@ -25,11 +25,11 @@ installed:
   be installed.
 
 ## Releases
-[0.1.dev](https://pypi.python.org/packages/source/t/tssv/tssv-0.1.dev.tar.gz)  
-[0.2.dev](https://pypi.python.org/packages/source/t/tssv/tssv-0.2.dev.tar.gz)  
-[0.2.0](https://pypi.python.org/packages/source/t/tssv/tssv-0.2.0.tar.gz)  
-[0.2.1](https://pypi.python.org/packages/source/t/tssv/tssv-0.2.1.tar.gz)  
 [0.2.2](https://pypi.python.org/packages/source/t/tssv/tssv-0.2.2.tar.gz)  
+[0.2.1](https://pypi.python.org/packages/source/t/tssv/tssv-0.2.1.tar.gz)  
+[0.2.0](https://pypi.python.org/packages/source/t/tssv/tssv-0.2.0.tar.gz)  
+[0.2.dev](https://pypi.python.org/packages/source/t/tssv/tssv-0.2.dev.tar.gz)  
+[0.1.dev](https://pypi.python.org/packages/source/t/tssv/tssv-0.1.dev.tar.gz)  
 Please note that the [latest](https://pypi.python.org/pypi/tssv) version will
 always be available on the [Python Package Index](https://pypi.python.org/).
 
