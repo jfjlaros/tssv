@@ -1,7 +1,7 @@
 SWIG := swig
 
 CC := gcc
-CFLAGS := -fPIC -I/usr/include/python2.7
+CFLAGS := -O3 -fPIC -I/usr/include/python2.7
 
 LD  := ld
 LFLAGS := -shared
