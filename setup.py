@@ -1,3 +1,12 @@
+# Patch for swig.
+from distutils.command.build import build as _build
+_build.sub_commands = [
+    ('build_ext', _build.has_ext_modules),
+    ('build_py', _build.has_pure_modules),
+    ('build_clib', _build.has_c_libraries),
+    ('build_scripts', _build.has_scripts)
+]
+
 import sys
 from setuptools import setup
 from distutils.core import Extension
@@ -18,8 +27,8 @@ import tssv as distmeta
 
 setup(
     name="tssv",
-    ext_modules=[Extension('_sg_align', ['tssv/sg_align.i',
-        'tssv/sg_align.c'], swig_opts=[])],
+    ext_modules=[Extension('_sg_align', ['tssv/sg_align.c',
+        'tssv/sg_align.i'], swig_opts=[])],
     py_modules=['tssv.sg_align'],
     version=distmeta.__version__,
     description="Targeted characterisation of short structural variation.",
