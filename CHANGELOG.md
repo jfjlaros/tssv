@@ -1,5 +1,8 @@
 # TSSV changelog
 
+19 August, 2014:
+* Fixed memory leak.
+
 8 August, 2014:
 * Added minimum thresholds to master allele tables and summary.
 * Released version 0.2.2.

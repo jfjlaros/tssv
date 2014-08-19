@@ -2,6 +2,7 @@ SWIG := swig
 
 CC := gcc
 CFLAGS := -O3 -fPIC -I/usr/include/python2.7
+DFLAGS := -Wall -ggdb
 
 LD  := ld
 LFLAGS := -shared
@@ -39,3 +40,9 @@ distclean: clean
 
 _%.so: %.o %_wrap.o
 	$(LD) $(LFLAGS) $^ -o $@
+
+sg_align.o: sg_align.c sg_align.h
+	$(CC) $(DFLAGS) -c $^
+
+debug: debug.c sg_align.o
+	$(CC) $(DFLAGS) -o $@ $^

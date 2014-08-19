@@ -48,7 +48,7 @@ Free a matrix for semi-global alignment.
 void _free_matrix(int **matrix, int x_size) {
   int i;
 
-  for (i = 0; i < x_size - 1; i++)
+  for (i = 0; i < x_size; i++)
     free(matrix[i]);
   free(matrix);
 }//_free_matrix
