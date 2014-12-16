@@ -42,14 +42,14 @@ headers = {
 
 def parse_library(library_handle, threshold):
     """
-    Parse the library file and put the data in a nested dicrionary containing
+    Parse the library file and put the data in a nested dictionary containing
     per marker the two forward flanking sequences, the two reverse flanking
     sequences and a regular expression pattern object.
 
     :arg library_handle: Open readable handle to a library file.
     :type library_handle: stream
     :arg threshold: Number of allowed mismatches per nucleotide.
-    :type threshold: int
+    :type threshold: float
 
     :returns: Nested dictionary containing library data.
     :rtype: dict
@@ -353,7 +353,7 @@ def tssv(fasta_handle, library_handle, report_handle, path, threshold,
     :arg path: Name of the output folder.
     :type path: str
     :arg threshold: Number of allowed mismatches per nucleotide.
-    :type threshold: int
+    :type threshold: float
     :arg minimum: Minimum count per allele.
     :type minimum: int
     """
