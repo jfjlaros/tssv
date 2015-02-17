@@ -340,7 +340,7 @@ def write_files(tables, files):
 #write_files
 
 def tssv(fasta_handle, library_handle, report_handle, path, threshold,
-        minimum):
+        minimum, is_fastq):
     """
     Do the short structural variation analysis.
 
@@ -356,6 +356,8 @@ def tssv(fasta_handle, library_handle, report_handle, path, threshold,
     :type threshold: float
     :arg minimum: Minimum count per allele.
     :type minimum: int
+    :arg is_fastq: Read FASTQ file instead of FASTA.
+    :type is_fastq: bool
     """
     total = 0
     unrecognised = 0
@@ -364,43 +366,62 @@ def tssv(fasta_handle, library_handle, report_handle, path, threshold,
     if path:
         files = open_files(path, library)
 
-    for record in SeqIO.parse(fasta_handle, "fasta"):
+    for record in SeqIO.parse(fasta_handle, "fastq" if is_fastq else "fasta"):
         ref = [str(record.seq), Seq.reverse_complement(str(record.seq))]
+        ref_up = map(lambda x: x.upper(), ref)
         total += 1
         unknown = True
 
         for i in library:
-            alignments = (align_pair(ref[0], ref[1], library[i]["flanks"]),
-                align_pair(ref[1], ref[0], library[i]["flanks"]))
+            # Align against all-uppercase reference sequence.
+            alignments = (
+                align_pair(ref_up[0], ref_up[1], library[i]["flanks"]),
+                align_pair(ref_up[1], ref_up[0], library[i]["flanks"]))
             matches = [False, False, False, False]
             classification = ""
 
             if alignments[0][0][0] <= library[i]["thresholds"][0]:
-                library[i]["counts"][0] += 1
-                classification = "noend"
-                matches[0] = True
+                cutout = ref[0][
+                    alignments[0][0][1]-len(library[i]["flanks"][0]):
+                    alignments[0][0][1]]
+                if cutout.lower() != cutout:
+                    library[i]["counts"][0] += 1
+                    classification = "noend"
+                    matches[0] = True
             #if
             if alignments[0][1][0] <= library[i]["thresholds"][1]:
-                library[i]["counts"][2] += 1
-                classification = "nostart"
-                matches[1] = True
+                cutout = ref[0][
+                    alignments[0][1][1]:
+                    alignments[0][1][1]+len(library[i]["flanks"][1])]
+                if cutout.lower() != cutout:
+                    library[i]["counts"][2] += 1
+                    classification = "nostart"
+                    matches[1] = True
             #if
             if alignments[1][0][0] <= library[i]["thresholds"][0]:
-                library[i]["counts"][1] += 1
-                classification = "noend"
-                matches[2] = True
+                cutout = ref[1][
+                    alignments[1][0][1]-len(library[i]["flanks"][0]):
+                    alignments[1][0][1]]
+                if cutout.lower() != cutout:
+                    library[i]["counts"][1] += 1
+                    classification = "noend"
+                    matches[2] = True
             #if
             if alignments[1][1][0] <= library[i]["thresholds"][1]:
-                library[i]["counts"][3] += 1
-                classification = "nostart"
-                matches[3] = True
+                cutout = ref[1][
+                    alignments[1][1][1]:
+                    alignments[1][1][1]+len(library[i]["flanks"][1])]
+                if cutout.lower() != cutout:
+                    library[i]["counts"][3] += 1
+                    classification = "nostart"
+                    matches[3] = True
             #if
 
             if (matches[0] and matches[1]) or (matches[2] and matches[3]):
                 hit = int(matches[2] and matches[3])
 
                 library[i]["pair_match"][hit] += 1
-                pat = ref[hit][alignments[hit][0][1]:alignments[hit][1][1]]
+                pat = ref_up[hit][alignments[hit][0][1]:alignments[hit][1][1]]
 
                 classification = "new"
                 if library[i]["reg_exp"].match(pat):
@@ -451,6 +472,8 @@ def main():
         help="a FASTA file")
     parser.add_argument("lib", metavar="LIBRARY", type=argparse.FileType("r"),
         help="library of flanking sequences")
+    parser.add_argument("-q", dest="fastq", action="store_true",
+        help="if specified, treat input as FASTQ instead of FASTA")
     parser.add_argument("-m", dest="mismatches", type=float, default=0.08,
         help="mismatches per nucleotide (default=%(default)s)")
     parser.add_argument("-r", dest="report", type=argparse.FileType("w"),
@@ -464,7 +487,7 @@ def main():
 
     try:
         tssv(args.fasta, args.lib, args.report, args.path, args.mismatches,
-            args.minimum)
+            args.minimum, args.fastq)
     except OSError, error:
         parser.error(error)
 #main
