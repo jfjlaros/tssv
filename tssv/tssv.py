@@ -382,7 +382,7 @@ def tssv(fasta_handle, library_handle, report_handle, path, threshold,
 
             if alignments[0][0][0] <= library[i]["thresholds"][0]:
                 cutout = ref[0][
-                    alignments[0][0][1]-len(library[i]["flanks"][0]):
+                    max(0, alignments[0][0][1]-len(library[i]["flanks"][0])):
                     alignments[0][0][1]]
                 if cutout.lower() != cutout:
                     library[i]["counts"][0] += 1
@@ -400,7 +400,7 @@ def tssv(fasta_handle, library_handle, report_handle, path, threshold,
             #if
             if alignments[1][0][0] <= library[i]["thresholds"][0]:
                 cutout = ref[1][
-                    alignments[1][0][1]-len(library[i]["flanks"][0]):
+                    max(0, alignments[1][0][1]-len(library[i]["flanks"][0])):
                     alignments[1][0][1]]
                 if cutout.lower() != cutout:
                     library[i]["counts"][1] += 1
