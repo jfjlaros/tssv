@@ -161,9 +161,12 @@ def rewrite(regular_expression, pattern):
     new_pattern = ""
     match = regular_expression.match(pattern)
 
-    regs = [((0, 0), None)] + filter(lambda y: y != ((-1, -1), None),
+    regs = reduce(lambda x, y:
+            x if y == ((-1, -1), None) else
+            x[:-1] + [y] if x[-1][1] == y[1] else
+            x + [y],
         map(lambda x: (match.regs[x], match.group(x)),
-        range(1, len(match.regs))))
+        range(1, len(match.regs))), [((0, 0), None)])
 
     for i in range(len(regs) - 1):
         new_pattern += "%s(%i)" % (regs[i + 1][1], (regs[i + 1][0][1] -
