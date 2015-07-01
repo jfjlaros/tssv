@@ -1,5 +1,15 @@
 # TSSV changelog
 
+20 February, 2015:
+* Repeated units like X(n)X(m) are now collapsed to X(n+m).
+
+18 February, 2015:
+* Fixed bug in the detection of the left flank.
+
+17 February, 2015:
+* Introduced [paired-end read support](doc/paired-end.md).
+* Added -q option to read data from FASTQ files.
+
 19 August, 2014:
 * Fixed memory leak.
 

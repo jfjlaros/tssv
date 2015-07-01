@@ -33,6 +33,7 @@ installed:
 ## Releases
 Version                                                                       | Notes
 ---                                                                           | ---
+[0.2.4](https://pypi.python.org/packages/source/t/tssv/tssv-0.2.4.tar.gz)     | Fixed memory leak.
 [0.2.3](https://pypi.python.org/packages/source/t/tssv/tssv-0.2.3.tar.gz)     | Big [performance boost](doc/benchmark.md).
 [0.2.2](https://pypi.python.org/packages/source/t/tssv/tssv-0.2.2.tar.gz)     | Applied minimum threshold to summary tables.
 [0.2.1](https://pypi.python.org/packages/source/t/tssv/tssv-0.2.1.tar.gz)     | Fixed minimum threshold bug.
