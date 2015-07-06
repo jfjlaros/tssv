@@ -27,6 +27,13 @@ the flanking sequences contains all repeats that were originally present in the
 DNA molecule and therefore it is not meaningful to perform a regular expression
 match against it.
 
+One particular paired-end read merging tool that supports this kind of output is
+a fork of FLASH 1.2.11 that was specifically made for this purpose, which is
+hosted [on GitHub](https://github.com/Jerrythafast/FLASH-lowercase-overhang).
+This fork introduces an optional command-line argument --lowercase-overhang
+that, when specified, enables output compatible with the paired-end read support
+of TSSV.
+
 ## Cheat sheet: Interpretation of letter case in TSSV input and output
 Letter case in the library file:
 
