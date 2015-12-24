@@ -143,10 +143,8 @@ void _align(unsigned char *mem, unsigned int x_size, unsigned int y_size, char *
           my = _mm_loadu_si128((__m128i*)(seq2r + seq2len - 1));
 
   while (1) {
-    mi = _mm_min_epu8(_mm_min_epu8(
-      _mm_adds_epu8(ml, ones), _mm_adds_epu8(mu, ones)),
-      _mm_adds_epu8(md, _mm_add_epi8(
-        _mm_cmpeq_epi8(mx, my), ones)));
+    mi = _mm_min_epu8(_mm_adds_epu8(_mm_min_epu8(ml, mu), ones),
+      _mm_adds_epu8(md, _mm_add_epi8(_mm_cmpeq_epi8(mx, my), ones)));
 
     limit = y - x + 1;
     if (limit >= 16 || y >= (x_size - 1))
@@ -291,9 +289,9 @@ Initialise a matrix for semi-global alignment.
 :rtype: int *
 */
 unsigned int *_make_matrix(unsigned int x_size, unsigned int y_size) {
-  unsigned int xy_size = x_size * y_size,
-      *matrix = malloc(xy_size * sizeof(int)),
-      i, *cell;
+  unsigned int i,
+    *matrix = malloc(x_size * y_size * sizeof(int)),
+    *cell;
 
   for (i = 0, cell = matrix; i < y_size; i++, cell++)
     *cell = i;
@@ -344,7 +342,7 @@ void _align(unsigned int *matrix, unsigned int x_size, unsigned int y_size, char
 
   for (x = 1; x < x_size; x++, d++, l++, u++, i++)
     for (y = 1; y < y_size; y++, d++, l++, u++, i++)
-      *i = _min(_min(*l + 1, *u + 1),
+      *i = _min(_min(*l, *u) + 1,
         *d + (unsigned int)(seq1[x - 1] != seq2[y - 1]));
 }//_align
 
