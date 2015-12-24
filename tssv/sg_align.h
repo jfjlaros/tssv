@@ -1,6 +1,6 @@
 typedef struct {
-  int distance,
-      position;
+  unsigned int distance,
+               position;
 } alignment;
 
 alignment align(char *, char *);
