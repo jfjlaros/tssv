@@ -136,8 +136,6 @@ def process_file(input_handle, file_format, library, outfiles=None):
         ref = (str(record.seq), Seq.reverse_complement(str(record.seq)))
         total_reads += 1
         recognised = False
-        if total_reads == 10000:
-            break #FIXME!!!!
 
         for marker in library:
 
