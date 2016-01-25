@@ -344,7 +344,7 @@ def tssv(fasta_handle, library_handle, report_handle, path, threshold,
 
     for record in SeqIO.parse(fasta_handle, "fastq" if is_fastq else "fasta"):
         ref = [str(record.seq), Seq.reverse_complement(str(record.seq))]
-        ref_up = map(lambda x: x.upper(), ref)
+        ref_up = map(str.upper, ref)
         total += 1
         unknown = True
 

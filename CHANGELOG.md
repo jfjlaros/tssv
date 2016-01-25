@@ -1,5 +1,16 @@
 # TSSV changelog
 
+25 January, 2016:
+* Introduced TSSV-Light (`tssvl`), which is a stripped-down version of TSSV
+  without the STR regular expressions and the distinction between known and new
+  alleles, and with more condensed output.
+
+24 December, 2015:
+* Increased speed by at least 3.5x* on systems supporting SSE2 instructions,
+  and by at least 1.5x on other systems by overhauling the alignment algorithm.
+  (*Tested on real-world data consisting of 830,000 reads from 24 markers.
+  94% of reads were 200-300bp in length, library sequences were 18bp.)
+
 20 February, 2015:
 * Repeated units like X(n)X(m) are now collapsed to X(n+m).
 

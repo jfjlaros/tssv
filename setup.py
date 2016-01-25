@@ -15,7 +15,7 @@ if sys.version_info < (2, 6):
     raise Exception('TSSV requires Python 2.6 or higher.')
 
 # Todo: How does this play with pip freeze requirement files?
-requires = ['biopython', 'fastools', 'suds']
+requires = ['biopython', 'suds']
 
 # Python 2.6 does not include the argparse module.
 try:
@@ -43,6 +43,7 @@ setup(
     entry_points = {
         'console_scripts': [
             'tssv = tssv.tssv:main',
+            'tssvl = tssv.tssv_light:main',
             'tannotate = tssv.annotate:main',
         ]
     },
