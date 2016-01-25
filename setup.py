@@ -43,7 +43,7 @@ setup(
     entry_points = {
         'console_scripts': [
             'tssv = tssv.tssv:main',
-            'tssvl = tssv.tssv_light:main',
+            'tssvl = tssv.tssv_lite:main',
             'tannotate = tssv.annotate:main',
         ]
     },
