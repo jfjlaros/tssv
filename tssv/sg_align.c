@@ -1,5 +1,19 @@
 /*
 Library with functions for a semi-global alignment.
+
+
+Two implementations are contained within this file:
+1. An implementation using SSE2 instructions, which is used on systems that
+   support these instructions. The SSE2 implementation uses a matrix of unsigned
+   chars instead of ints and stores the matrix diagonally. The implementation is
+   optimised for tall matrices; it will transpose the matrix if it is wide.
+   This implementation achieves a 3-4x performance improvement compaired to
+   TSSV 0.2.5, on data consiting predominantly of reads of 200-300bp.
+2. A fallback implementation which is used if SSE2 is not available. Compared to
+   TSSV 0.2.5, this optimised implementation achieves about a 1.5x performance
+   improvement, most of which is attributable to allocating the alignment matrix
+   as a single block of memory and using pointers instead of array indices to
+   access it.
 */
 
 #include <string.h>
