@@ -10,11 +10,12 @@ The library file consists of three tab-separated columns:
 
 Without the -d option, TSSV-Lite will write a table containing a count
 of each unique sequence detected to standard output, and a table of
-per-marker statistics to the standard error stream.
+per-marker statistics to the standard error stream. This output can be
+redirected to a file using the -o and -r options, respectively.
 
 If the -d option is used, a folder will be created instead, and the
 output is written to two files named sequences.csv and statistics.csv in
-this folder. Additoinally, a subfolder is created for each marker
+this folder. Additionally, a subfolder is created for each marker
 containing separate tables of the detected sequences and split FASTA
 files.
 
@@ -31,8 +32,9 @@ import sys
 import os
 
 from Bio import Seq, SeqIO
+from fastools import fastools
 
-from . import version
+from . import ProtectedFileType, version
 from .align_pair import align_pair
 
 usage = __doc__.split("\n\n\n")
@@ -134,6 +136,8 @@ def process_file(input_handle, file_format, library, outfiles=None):
         ref = (str(record.seq), Seq.reverse_complement(str(record.seq)))
         total_reads += 1
         recognised = False
+        if total_reads == 10000:
+            break #FIXME!!!!
 
         for marker in library:
 
@@ -279,10 +283,10 @@ def make_statistics_table(counters):
             counters[marker]["rRight"]])) for marker in sorted(counters)])
 
 
-def tssv_light(input_handle, is_fastq, library, minimum, dir, tee):
+def tssv_lite(input_handle, file_format, library, minimum, dir, tee,
+              output_handle, report_handle):
     """
     """
-    file_format = "fastq" if is_fastq else "fasta"
 
     if dir:
         # Create output directories.
@@ -318,6 +322,7 @@ def tssv_light(input_handle, is_fastq, library, minimum, dir, tee):
 
     # Make table of sequences.
     table_of_sequences = make_sequence_table(sequences, minimum,
+        None if outfiles is None else
         {m: outfiles["markers"][m]["sequences"] for m in outfiles["markers"]})
 
     # Make table of statistics.
@@ -327,9 +332,10 @@ def tssv_light(input_handle, is_fastq, library, minimum, dir, tee):
         "total reads\t%i" % total_reads,
         "unrecognised reads\t%i" % unrecognised))
 
-    if not outfiles or tee:
-        sys.stdout.write(table_of_sequences + "\n")
-        sys.stderr.write(statistics + "\n")
+    if not outfiles or tee or output_handle != sys.stdout:
+        output_handle.write(table_of_sequences + "\n")
+    if not outfiles or tee or report_handle != sys.stderr:
+        report_handle.write(statistics + "\n")
     if outfiles:
         outfiles["sequences"].write(table_of_sequences)
         outfiles["statistics"].write(statistics)
@@ -346,8 +352,10 @@ def main():
         type=argparse.FileType('r'), help='input FASTA/FASTQ file')
     parser.add_argument('library_handle', metavar='LIBRARY',
         type=argparse.FileType('r'), help='library of flanking sequences')
-    parser.add_argument('-q', '--fastq', action='store_true',
-        help='if specified, treat input as FASTQ instead of FASTA')
+    parser.add_argument('-f', '--format', choices=('auto', 'fasta', 'fastq'),
+        default='auto',
+        help='file type of the input data: one of %(choices)s '
+             '(default=%(default)s)')
     parser.add_argument('-m', '--mismatches', type=float, default=0.08,
         help='mismatches per nucleotide (default=%(default)s)')
     parser.add_argument('-d', '--dir', type=str,
@@ -357,19 +365,29 @@ def main():
              'is not suppressed')
     parser.add_argument('-a', '--minimum', type=int, default=0,
         help='minimum count per sequence (default=%(default)s)')
+    parser.add_argument('-o', '--output', type=ProtectedFileType('w'),
+        default=sys.stdout,
+        help='write output to this file (default: write to standard output)')
+    parser.add_argument('-r', '--report', type=ProtectedFileType('w'),
+        default=sys.stderr,
+        help='write a statistical report to this file (default: write to '
+             'standard error)')
     parser.add_argument('-v', '--version', action='version',
         version=version(parser.prog))
 
     args = parser.parse_args()
 
     try:
-        tssv_light(
+        tssv_lite(
             args.input_handle,
-            args.fastq,
+            fastools.guess_file_format(args.input_handle)
+                if args.format == 'auto' else args.format,
             parse_library(args.library_handle, args.mismatches),
             args.minimum,
             args.dir,
-            args.tee)
+            args.tee,
+            args.output,
+            args.report)
     except ValueError, error:
         parser.error(error)
 
