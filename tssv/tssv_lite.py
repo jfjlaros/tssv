@@ -58,6 +58,44 @@ def parse_library(library_handle, threshold):
                 for data in (
                     line.split() for line in library_handle.readlines())}
 
+def prepare_output_dir(dir, markers, file_format):
+    """
+    Create output directories and return a nested dict of output files.
+
+    :arg dir: Output directory name.
+    :type dir: str
+    :arg markers: Iterable providing the marker names.
+    :type markers: iterable
+    :arg file_format: Output file format ('fasta' or 'fastq').
+    :type file_format: str
+
+    :returns: Nested dict with open writable streams to output files.
+    :rtype: dict
+    """
+    # Create output directories.
+    os.mkdir(dir)
+    for marker in markers:
+        os.mkdir(os.path.join(dir, marker))
+
+    # Open output files.
+    return {
+        "sequences": open(os.path.join(dir, "sequences.csv"), "w"),
+        "statistics": open(os.path.join(dir, "statistics.csv"), "w"),
+        "unknown": open(os.path.join(dir, "unknown.f" + file_format[-1]), "w"),
+        "markers": {
+            marker: {
+                "sequences": open(os.path.join(dir, marker,
+                    "sequences.csv"), "w"),
+                "paired": open(os.path.join(dir, marker,
+                    "paired.f" + file_format[-1]), "w"),
+                "noend": open(os.path.join(dir, marker,
+                    "noend.f" + file_format[-1]), "w"),
+                "nostart": open(os.path.join(dir, marker,
+                    "nostart.f" + file_format[-1]), "w"),
+            } for marker in markers
+        }
+    }
+
 
 def find_pair(seq, pair, thresholds):
     """
@@ -285,32 +323,8 @@ def tssv_lite(input_handle, file_format, library, minimum, dir, tee,
               output_handle, report_handle):
     """
     """
-
     if dir:
-        # Create output directories.
-        os.mkdir(dir)
-        for marker in library:
-            os.mkdir(os.path.join(dir, marker))
-
-        # Open output files.
-        outfiles = {
-            "sequences": open(os.path.join(dir, "sequences.csv"), "w"),
-            "statistics": open(os.path.join(dir, "statistics.csv"), "w"),
-            "unknown": open(os.path.join(dir,
-                "unknown.f" + file_format[-1]), "w"),
-            "markers": {
-                marker: {
-                    "sequences": open(os.path.join(dir, marker,
-                        "sequences.csv"), "w"),
-                    "paired": open(os.path.join(dir, marker,
-                        "paired.f" + file_format[-1]), "w"),
-                    "noend": open(os.path.join(dir, marker,
-                        "noend.f" + file_format[-1]), "w"),
-                    "nostart": open(os.path.join(dir, marker,
-                        "nostart.f" + file_format[-1]), "w"),
-                } for marker in library
-            }
-        }
+        outfiles = prepare_output_dir(dir, library, file_format)
     else:
         outfiles = None
 
