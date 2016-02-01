@@ -364,8 +364,8 @@ def main():
         type=argparse.FileType('r'), help='input FASTA/FASTQ file')
     parser.add_argument('library_handle', metavar='LIBRARY',
         type=argparse.FileType('r'), help='library of flanking sequences')
-    parser.add_argument('-f', '--format', choices=('auto', 'fasta', 'fastq'),
-        default='auto',
+    parser.add_argument('-f', '--format', metavar='FORMAT',
+        choices=('auto', 'fasta', 'fastq'), default='auto',
         help='file type of the input data: one of %(choices)s '
              '(default=%(default)s)')
     parser.add_argument('-m', '--mismatches', type=float, default=0.08,
