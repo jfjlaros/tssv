@@ -19,8 +19,9 @@ this folder. Additionally, a subfolder is created for each marker
 containing separate tables of the detected sequences and split FASTA
 files.
 
-Copyright (c) 2014 Leiden University Medical Center <humgen@lumc.nl>
-Copyright (c) 2014 Jeroen F.J. Laros <j.f.j.laros@lumc.nl>
+Copyright (c) 2016 Leiden University Medical Center <humgen@lumc.nl>
+Copyright (c) 2016 Jeroen F.J. Laros <j.f.j.laros@lumc.nl>
+Copyright (c) 2016 Jerry Hoogenboom <j.hoogenboom@nfi.minvenj.nl>
 Copyright (c) 2012 Jaap W.F. van der Heijden
 
 Licensed under the MIT license, see the LICENSE file.
