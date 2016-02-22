@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+
 import argparse
 import collections
 import math
@@ -9,7 +10,9 @@ import sys
 
 from Bio import Seq, SeqIO
 
-from . import ProtectedFileType, doc_split, usage, version, sg_align
+from . import ProtectedFileType, doc_split, usage, version
+from .align_pair import align_pair
+
 
 file_names = {
     "unknown": "unknown.fa",
@@ -39,6 +42,7 @@ headers = {
   "overview"  : "name\tforward\treverse\ttotal\tallele\n"
 }
 """ Headers for various tables."""
+
 
 def parse_library(library_handle, threshold):
     """
@@ -72,10 +76,9 @@ def parse_library(library_handle, threshold):
             "new": collections.defaultdict(lambda: [0, 0]),
             "known": collections.defaultdict(lambda: [0, 0])
         }
-    #for
 
     return library
-#parse_library
+
 
 def open_files(path, markers):
     """
@@ -99,33 +102,9 @@ def open_files(path, markers):
         os.mkdir(marker_path)
         files[i] = dict(map(lambda x: (x, open("%s/%s" % (marker_path,
             marker_file_names[x]), "w")), marker_file_names))
-    #for
 
     return files
-#open_files
 
-def align_pair(reference, reference_rc, pair):
-    """
-    Align a pair of markers to the forward reference sequence. The reverse
-    complement is used to align the second element of the pair (which is also
-    reverse complemented).
-
-    :arg reference: Reference sequence to align to.
-    :type reference: str
-    :arg reference_rc: Reverse complement of the reference sequence.
-    :type reference_rc: str
-    :arg pair: A pair (forward, reverse) of markers to align.
-    :type pair: list[str, str]
-
-    :returns: A tuple (score, position) of the best alignment.
-    :rtype: tuple(int, int)
-    """
-    right_alignment = sg_align.align(reference_rc, pair[1])
-    left_alignment = sg_align.align(reference, pair[0])
-
-    return ((left_alignment.distance, left_alignment.position),
-        (right_alignment.distance, len(reference) - right_alignment.position))
-#align_pair
 
 def write_table(table, header, handle):
     """
@@ -144,7 +123,7 @@ def write_table(table, header, handle):
     if table:
         for i in table:
             handle.write("%s\n" % '\t'.join(map(str, i)))
-#write_table
+
 
 def rewrite(regular_expression, pattern):
     """
@@ -173,7 +152,7 @@ def rewrite(regular_expression, pattern):
             regs[i][0][1]) / (regs[i + 1][0][1] - regs[i + 1][0][0]))
 
     return new_pattern
-#rewrite
+
 
 def allele_table(new_allele, minimum):
     """
@@ -195,10 +174,9 @@ def allele_table(new_allele, minimum):
             break
 
         l.append([i] + [sum(new_allele[i])] + new_allele[i])
-    #for
 
     return l
-#allele_table
+
 
 def summary_table(allele, minimum):
     """
@@ -213,7 +191,7 @@ def summary_table(allele, minimum):
     :rtype: list
     """
     return filter(lambda x: x[3] >= minimum, allele)
-#summary_table
+
 
 def make_tables(total, unrecognised, library, minimum):
     """
@@ -246,11 +224,9 @@ def make_tables(total, unrecognised, library, minimum):
         for j in library[i]["known"]:
             fr = library[i]["known"][j]
             known.append([i] + fr + [sum(fr), j])
-        #for
         for j in library[i]["new"]:
             fr = library[i]["new"][j]
             new.append([i] + fr + [sum(fr), j])
-        #for
 
         no_start.append([i,
             library[i]["counts"][2] - library[i]["pair_match"][0],
@@ -262,7 +238,6 @@ def make_tables(total, unrecognised, library, minimum):
         tables["allele"][i]["known"] = allele_table(library[i]["known"],
             minimum)
         tables["allele"][i]["new"] = allele_table(library[i]["new"], minimum)
-    #for
 
     tables["known"] = sorted(summary_table(known, minimum),
         key=lambda x: (x[0], x[4]))
@@ -284,7 +259,7 @@ def make_tables(total, unrecognised, library, minimum):
     ]
 
     return tables
-#make_tables
+
 
 def make_report(tables, handle):
     """
@@ -315,8 +290,7 @@ def make_report(tables, handle):
         handle.write("\nnew alleles for marker %s (mean length %i):\n" % (i,
             mean_length))
         write_table(tables["allele"][i]["new"], headers["allele"], handle)
-    #for
-#make_report
+
 
 def write_files(tables, files):
     """
@@ -339,8 +313,7 @@ def write_files(tables, files):
             files[i]["knownalleles"])
         write_table(tables["allele"][i]["new"], headers["allele"],
             files[i]["newalleles"])
-    #for
-#write_files
+
 
 def tssv(fasta_handle, library_handle, report_handle, path, threshold,
         minimum, is_fastq):
@@ -371,7 +344,7 @@ def tssv(fasta_handle, library_handle, report_handle, path, threshold,
 
     for record in SeqIO.parse(fasta_handle, "fastq" if is_fastq else "fasta"):
         ref = [str(record.seq), Seq.reverse_complement(str(record.seq))]
-        ref_up = map(lambda x: x.upper(), ref)
+        ref_up = map(str.upper, ref)
         total += 1
         unknown = True
 
@@ -391,7 +364,6 @@ def tssv(fasta_handle, library_handle, report_handle, path, threshold,
                     library[i]["counts"][0] += 1
                     classification = "noend"
                     matches[0] = True
-            #if
             if alignments[0][1][0] <= library[i]["thresholds"][1]:
                 cutout = ref[0][
                     alignments[0][1][1]:
@@ -400,7 +372,6 @@ def tssv(fasta_handle, library_handle, report_handle, path, threshold,
                     library[i]["counts"][2] += 1
                     classification = "nostart"
                     matches[1] = True
-            #if
             if alignments[1][0][0] <= library[i]["thresholds"][0]:
                 cutout = ref[1][
                     max(0, alignments[1][0][1]-len(library[i]["flanks"][0])):
@@ -409,7 +380,6 @@ def tssv(fasta_handle, library_handle, report_handle, path, threshold,
                     library[i]["counts"][1] += 1
                     classification = "noend"
                     matches[2] = True
-            #if
             if alignments[1][1][0] <= library[i]["thresholds"][1]:
                 cutout = ref[1][
                     alignments[1][1][1]:
@@ -418,7 +388,6 @@ def tssv(fasta_handle, library_handle, report_handle, path, threshold,
                     library[i]["counts"][3] += 1
                     classification = "nostart"
                     matches[3] = True
-            #if
 
             if (matches[0] and matches[1]) or (matches[2] and matches[3]):
                 hit = int(matches[2] and matches[3])
@@ -431,23 +400,18 @@ def tssv(fasta_handle, library_handle, report_handle, path, threshold,
                     classification = "known"
 
                 library[i][classification][pat][hit] += 1
-            #if
 
             if classification:
                 unknown = False
 
                 if path:
                     SeqIO.write([record], files[i][classification], "fasta")
-            #if
-        #for
 
         if unknown:
             unrecognised += 1
 
             if path:
                 SeqIO.write([record], files["unknown"], "fasta")
-        #if
-    #for
 
     tables = make_tables(total, unrecognised, library, minimum)
 
@@ -462,7 +426,7 @@ def tssv(fasta_handle, library_handle, report_handle, path, threshold,
         write_files(tables, files)
 
     make_report(tables, report_handle)
-#tssv
+
 
 def main():
     """
@@ -493,7 +457,7 @@ def main():
             args.minimum, args.fastq)
     except OSError, error:
         parser.error(error)
-#main
+
 
 if __name__ == "__main__":
     main()
