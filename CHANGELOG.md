@@ -1,5 +1,8 @@
 # TSSV changelog
 
+22 February, 2016:
+* Released version 0.3.0.
+
 25 January, 2016:
 * Introduced TSSV-Light (`tssvl`), which is a stripped-down version of TSSV
   without the STR regular expressions and the distinction between known and new
