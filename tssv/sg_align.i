@@ -5,8 +5,8 @@
 %}
 
 typedef struct {
-  int distance,
-      position;
+  unsigned int distance,
+               position;
 } alignment;
 
-extern alignment align(char *, char *);
+extern alignment align(char *, char *, unsigned int);

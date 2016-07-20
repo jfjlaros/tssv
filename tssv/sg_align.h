@@ -3,4 +3,4 @@ typedef struct {
                position;
 } alignment;
 
-alignment align(char *, char *);
+alignment align(char *, char *, unsigned int);

@@ -27,7 +27,7 @@ import tssv as distmeta
 
 setup(
     name='tssv',
-    ext_modules=[Extension('_sg_align', ['tssv/sg_align.c',
+    ext_modules=[Extension('tssv/_sg_align', ['tssv/sg_align.c',
         'tssv/sg_align.i'], swig_opts=[])],
     py_modules=['tssv.sg_align'],
     version=distmeta.__version__,

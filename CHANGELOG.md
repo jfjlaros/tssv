@@ -1,5 +1,11 @@
 # TSSV changelog
 
+9 June, 2016:
+* Added -n/--indel-score argument.
+* Fixed bug that caused TSSV to install the compiled _sg_align module into the
+  system site-packages or dist-packages directory instead of the tssv package
+  directory.
+
 22 February, 2016:
 * Released version 0.3.0.
 

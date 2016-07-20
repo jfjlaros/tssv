@@ -33,6 +33,7 @@ installed:
 ## Releases
 Version                                                                       | Notes
 ---                                                                           | ---
+[0.3.1](https://pypi.python.org/packages/source/t/tssv/tssv-0.3.1.tar.gz)     | New option -n/--indel-score.
 [0.3.0](https://pypi.python.org/packages/source/t/tssv/tssv-0.3.0.tar.gz)     | Another big performance boost, and introducing TSSV-Lite (`tssvl`).
 [0.2.5](https://pypi.python.org/packages/source/t/tssv/tssv-0.2.5.tar.gz)     | Introduced [paired-end read support](doc/paired-end.md).
 [0.2.4](https://pypi.python.org/packages/source/t/tssv/tssv-0.2.4.tar.gz)     | Fixed memory leak.

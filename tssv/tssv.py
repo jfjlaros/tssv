@@ -316,7 +316,7 @@ def write_files(tables, files):
 
 
 def tssv(fasta_handle, library_handle, report_handle, path, threshold,
-        minimum, is_fastq):
+        minimum, is_fastq, indel_score):
     """
     Do the short structural variation analysis.
 
@@ -334,6 +334,9 @@ def tssv(fasta_handle, library_handle, report_handle, path, threshold,
     :type minimum: int
     :arg is_fastq: Read FASTQ file instead of FASTA.
     :type is_fastq: bool
+    :arg indel_score: Penalty score for insertions and deletions per
+    nucleotide
+    :type indel_score: int
     """
     total = 0
     unrecognised = 0
@@ -351,8 +354,10 @@ def tssv(fasta_handle, library_handle, report_handle, path, threshold,
         for i in library:
             # Align against all-uppercase reference sequence.
             alignments = (
-                align_pair(ref_up[0], ref_up[1], library[i]["flanks"]),
-                align_pair(ref_up[1], ref_up[0], library[i]["flanks"]))
+                align_pair(
+                    ref_up[0], ref_up[1], library[i]["flanks"], indel_score),
+                align_pair(
+                    ref_up[1], ref_up[0], library[i]["flanks"], indel_score))
             matches = [False, False, False, False]
             classification = ""
 
@@ -443,6 +448,9 @@ def main():
         help="if specified, treat input as FASTQ instead of FASTA")
     parser.add_argument("-m", dest="mismatches", type=float, default=0.08,
         help="mismatches per nucleotide (default=%(default)s)")
+    parser.add_argument('-n', '--indel-score', type=int, default=1,
+        help='insertions and deletions are penalised this number of times '
+             'more heavily than mismatches (default=%(default)s)')
     parser.add_argument("-r", dest="report", type=argparse.FileType("w"),
         default=sys.stdout, help="name of the report file")
     parser.add_argument("-d", dest="path", type=str, help="output directory")
@@ -454,7 +462,7 @@ def main():
 
     try:
         tssv(args.fasta, args.lib, args.report, args.path, args.mismatches,
-            args.minimum, args.fastq)
+            args.minimum, args.fastq, args.indel_score)
     except OSError, error:
         parser.error(error)
 

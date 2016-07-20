@@ -98,7 +98,7 @@ def prepare_output_dir(dir, markers, file_format):
     }
 
 
-def find_pair(seq, pair, thresholds):
+def find_pair(seq, pair, thresholds, indel_score=1):
     """
     Align a pair of markers to the forward reference sequence.  The
     reverse complement is used to align the second element of the pair
@@ -110,13 +110,16 @@ def find_pair(seq, pair, thresholds):
     :type pair: list[str, str]
     :arg thresholds: Maximum number of allowed mismatches.
     :type thresholds: list[int, int]
+    :arg indel_score: Penalty score for insertions and deletions per
+    nucleotide (optional, default: 1)
+    :type indel_score: int
 
     :returns: Bools indicating whether the two flanks are found, and the
     sequence between the two hits (or None if there was no paired hit).
     :rtype: tuple(list[bool, bool], str)
     """
     seq_up = map(str.upper, seq)
-    alignments = align_pair(seq_up[0], seq_up[1], pair)
+    alignments = align_pair(seq_up[0], seq_up[1], pair, indel_score)
     matches = [False, False]
 
     if alignments[0][0] <= thresholds[0]:
@@ -136,7 +139,8 @@ def find_pair(seq, pair, thresholds):
     return matches, None
 
 
-def process_file(input_handle, file_format, library, outfiles=None):
+def process_file(input_handle, file_format, library, outfiles=None,
+                 indel_score=1):
     """
     Process a FASTA or FASTQ file, attempt to link every read to a
     marker with the given library of flanking sequences.
@@ -158,6 +162,9 @@ def process_file(input_handle, file_format, library, outfiles=None):
     :arg outfiles: Dict with open writable streams to which FASTA or
     FASTQ data will be written (optional).
     :type outfiles: dict
+    :arg indel_score: Penalty score for insertions and deletions per
+    nucleotide (optional, default: 1)
+    :type indel_score: int
 
     :returns: The total number of reads, the number of unrecognised
     reads, a dict with counts of flanking sequence hits per marker, and
@@ -180,7 +187,7 @@ def process_file(input_handle, file_format, library, outfiles=None):
 
             # Search in the forward strand.
             matches, seq = find_pair(ref, library[marker][0],
-                library[marker][1])
+                library[marker][1], indel_score)
             if matches[0]:
                 recognised = True
                 counters[marker]["fLeft"] += 1
@@ -206,7 +213,7 @@ def process_file(input_handle, file_format, library, outfiles=None):
 
             # Search in the reverse strand.
             matches, seq = find_pair(ref[-1::-1], library[marker][0],
-                library[marker][1])
+                library[marker][1], indel_score)
             if matches[0]:
                 recognised = True
                 counters[marker]["rLeft"] += 1
@@ -321,7 +328,7 @@ def make_statistics_table(counters):
 
 
 def tssv_lite(input_handle, file_format, library, minimum, dir, tee,
-              output_handle, report_handle):
+              output_handle, report_handle, indel_score):
     """
     """
     if dir:
@@ -331,7 +338,7 @@ def tssv_lite(input_handle, file_format, library, minimum, dir, tee,
 
     # Process the input file and obtain counters and sequences.
     total_reads, unrecognised, counters, sequences = process_file(
-        input_handle, file_format, library, outfiles)
+        input_handle, file_format, library, outfiles, indel_score)
 
     # Make table of sequences.
     table_of_sequences = make_sequence_table(sequences, minimum,
@@ -371,6 +378,9 @@ def main():
              '(default=%(default)s)')
     parser.add_argument('-m', '--mismatches', type=float, default=0.08,
         help='mismatches per nucleotide (default=%(default)s)')
+    parser.add_argument('-n', '--indel-score', type=int, default=1,
+        help='insertions and deletions are penalised this number of times '
+             'more heavily than mismatches (default=%(default)s)')
     parser.add_argument('-d', '--dir', type=str,
         help='output directory for verbose output')
     parser.add_argument('-t', '--tee', action='store_true',
@@ -400,7 +410,8 @@ def main():
             args.dir,
             args.tee,
             args.output,
-            args.report)
+            args.report,
+            args.indel_score)
     except ValueError, error:
         parser.error(error)
 
