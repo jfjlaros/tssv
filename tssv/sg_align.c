@@ -34,7 +34,7 @@ Calculate the minimum of two values.
 :arg a: A value.
 :type a: char
 :arg b: A value.
-:type c: char
+:type b: char
 
 :returns: The minimum of {a} and {b}.
 :rtype: char
@@ -56,42 +56,48 @@ than x_size.
 :type y_size: int
 :arg transposed: Whether the matrix is transposed.
 :type transposed: int
+:arg indel_score: Penalty score for insertions and deletions.
+:type indel_score: char
 
 :returns: The alignment matrix. The actual matrix starts at the first
 16-byte aligned byte and is stored diagonally.
 :rtype: char *
 */
-unsigned char *_make_matrix(unsigned int x_size, unsigned int y_size, int transposed) {
+unsigned char *_make_matrix(unsigned int x_size, unsigned int y_size, int transposed, unsigned char indel_score) {
   unsigned int width = ((x_size+14) & ~0x0F) + 16,
     height = y_size + x_size - 1;
   unsigned char *mem = malloc(width * height + 16),
     *matrix = (unsigned char*)(((unsigned long int)mem + 15) & ~(unsigned long int)0x0F),
-    *cell;
+    *cell,
+    score;
   unsigned int i, j;
 
   if (transposed) {
-      // Set the first column to 0.
-      for (i = 0, cell = matrix; i < y_size; i++, cell += width)
-        *cell = 0;
+    // Set the first column to 0.
+    for (i = 0, cell = matrix; i < y_size; i++, cell += width)
+      *cell = 0;
 
-      // Set the first row to 0, 1, 2, 3, 4, ...
-      for (i = 0, cell = matrix; i < x_size; i++, cell += width + 1) {
-        *cell = (i > 255? 255 : i);
-        for (j = 1; j < (width - i); j++)
-            *(cell + j) = 255;  // This protects the second row.
-      }
+    // Set the first row to 0, 1, 2, 3, 4, ... times the indel_score
+    for (i = 0, cell = matrix, score = 0; i < x_size; i++, cell += width + 1) {
+      *cell = score;
+      score = (score > 255 - indel_score)? 255 : score + indel_score;
+      for (j = 1; j < (width - i); j++)
+        *(cell + j) = 255;  // This protects the second row.
+    }
   }
   else {
-      // Set the first column to 0, 1, 2, 3, 4, ...
-      for (i = 0, cell = matrix; i < y_size; i++, cell += width)
-        *cell = (i > 255? 255 : i);
+    // Set the first column to 0, 1, 2, 3, 4, ... times the indel_score
+    for (i = 0, cell = matrix, score = 0; i < y_size; i++, cell += width) {
+      *cell = score;
+      score = (score > 255 - indel_score)? 255 : score + indel_score;
+    }
 
-      // Set the first row to 0.
-      for (i = 0, cell = matrix; i < x_size; i++, cell += width + 1) {
-        *cell = 0;
-        for (j = 1; j < (width - i); j++)
-            *(cell + j) = 255;  // This protects the second row.
-      }
+    // Set the first row to 0.
+    for (i = 0, cell = matrix; i < x_size; i++, cell += width + 1) {
+      *cell = 0;
+      for (j = 1; j < (width - i); j++)
+        *(cell + j) = 255;  // This protects the second row.
+    }
   }
 
   return mem;
@@ -128,8 +134,10 @@ the first 16-byte aligned byte.
 :type seq1: char *
 :arg seq2: The second sequence to be aligned.
 :type seq2: char *
+:arg indel_score: Penalty score for insertions and deletions.
+:type indel_score: char
 */
-void _align(unsigned char *mem, unsigned int x_size, unsigned int y_size, char *seq1, char *seq2) {
+void _align(unsigned char *mem, unsigned int x_size, unsigned int y_size, char *seq1, char *seq2, unsigned char indel_score) {
   unsigned int x = 1, y = 1,
     width = ((x_size+14) & ~0x0F) + 16,
     end = y_size + _min(15, x_size - 1),
@@ -148,6 +156,7 @@ void _align(unsigned char *mem, unsigned int x_size, unsigned int y_size, char *
   revseq(seq2, seq2r, seq2len);
 
   const __m128i ones = _mm_set1_epi8(1),
+    indel_scores = _mm_set1_epi8(indel_score),
     range = _mm_set_epi8(15, 14, 13, 12, 11, 10, 9, 8, 7 ,6, 5, 4, 3, 2, 1, 0);
   __m128i mi,
           md = _mm_load_si128((__m128i*)d),
@@ -157,7 +166,7 @@ void _align(unsigned char *mem, unsigned int x_size, unsigned int y_size, char *
           my = _mm_loadu_si128((__m128i*)(seq2r + seq2len - 1));
 
   while (1) {
-    mi = _mm_min_epu8(_mm_adds_epu8(_mm_min_epu8(ml, mu), ones),
+    mi = _mm_min_epu8(_mm_adds_epu8(_mm_min_epu8(ml, mu), indel_scores),
       _mm_adds_epu8(md, _mm_add_epi8(_mm_cmpeq_epi8(mx, my), ones)));
 
     limit = y - x + 1;
@@ -260,28 +269,33 @@ Do a semi-global alignment of {seq2} to {seq1}.
 :type seq1: char *
 :arg seq2: The sequence to be aligned.
 :type seq2: char *
+:arg indel_score: Penalty score for insertions and deletions (max 255).
+:type indel_score: int
 
 :returns: The minimum distance and its row number.
 :rtype: alignment
 */
-alignment align(char *seq1, char *seq2) {
+alignment align(char *seq1, char *seq2, unsigned int indel_score) {
   alignment a;
   unsigned char *matrix;
   unsigned int x_size = strlen(seq1) + 1,
     y_size = strlen(seq2) + 1;
 
+  if (indel_score > 255)
+    indel_score = 255;
+
   if (x_size > y_size) {
-      // The alignment is optimised for tall matrices, transpose it.
-      matrix = _make_matrix(y_size, x_size, 1);
-      _align(matrix, y_size, x_size, seq2, seq1);
-      a = _find_min(matrix, y_size, x_size, 1);
-      free(matrix);
+    // The alignment is optimised for tall matrices, transpose it.
+    matrix = _make_matrix(y_size, x_size, 1, indel_score);
+    _align(matrix, y_size, x_size, seq2, seq1, indel_score);
+    a = _find_min(matrix, y_size, x_size, 1);
+    free(matrix);
   }
   else {
-      matrix = _make_matrix(x_size, y_size, 0);
-      _align(matrix, x_size, y_size, seq1, seq2);
-      a = _find_min(matrix, x_size, y_size, 0);
-      free(matrix);
+    matrix = _make_matrix(x_size, y_size, 0, indel_score);
+    _align(matrix, x_size, y_size, seq1, seq2, indel_score);
+    a = _find_min(matrix, x_size, y_size, 0);
+    free(matrix);
   }
   return a;
 }//align
@@ -298,17 +312,20 @@ Initialise a matrix for semi-global alignment.
 :type x_size: int
 :arg x_size: Size of the y dimension of the matrix.
 :type y_size: int
+:arg indel_score: Penalty score for insertions and deletions.
+:type indel_score: int
 
 :returns: The alignment matrix.
 :rtype: int *
 */
-unsigned int *_make_matrix(unsigned int x_size, unsigned int y_size) {
+unsigned int *_make_matrix(unsigned int x_size, unsigned int y_size, unsigned int indel_score) {
   unsigned int i,
     *matrix = malloc(x_size * y_size * sizeof(int)),
-    *cell;
+    *cell,
+    score;
 
-  for (i = 0, cell = matrix; i < y_size; i++, cell++)
-    *cell = i;
+  for (i = 0, cell = matrix, score = 0; i < y_size; i++, cell++, score += indel_score)
+    *cell = score;
 
   for (i = 0, cell = matrix; i < x_size; i++, cell += y_size)
     *cell = 0;
@@ -322,7 +339,7 @@ Calculate the minimum of two values.
 :arg a: A value.
 :type a: int
 :arg b: A value.
-:type c: int
+:type b: int
 
 :returns: The minimum of {a} and {b}.
 :rtype: int
@@ -346,8 +363,10 @@ Fill the alignment matrix.
 :type seq1: char *
 :arg seq2: The sequence to be aligned.
 :type seq2: char *
+:arg indel_score: Penalty score for insertions and deletions.
+:type indel_score: int
 */
-void _align(unsigned int *matrix, unsigned int x_size, unsigned int y_size, char *seq1, char *seq2) {
+void _align(unsigned int *matrix, unsigned int x_size, unsigned int y_size, char *seq1, char *seq2, unsigned int indel_score) {
   unsigned int x, y,
       *d = matrix,
       *l = d + 1,
@@ -356,7 +375,7 @@ void _align(unsigned int *matrix, unsigned int x_size, unsigned int y_size, char
 
   for (x = 1; x < x_size; x++, d++, l++, u++, i++)
     for (y = 1; y < y_size; y++, d++, l++, u++, i++)
-      *i = _min(_min(*l, *u) + 1,
+      *i = _min(_min(*l, *u) + indel_score,
         *d + (unsigned int)(seq1[x - 1] != seq2[y - 1]));
 }//_align
 
@@ -397,18 +416,20 @@ Do a semi-global alignment of {seq2} to {seq1}.
 :type seq1: char *
 :arg seq2: The sequence to be aligned.
 :type seq2: char *
+:arg indel_score: Penalty score for insertions and deletions.
+:type indel_score: int
 
 :returns: The minimum distance and its row number.
 :rtype: alignment
 */
-alignment align(char *seq1, char *seq2) {
+alignment align(char *seq1, char *seq2, unsigned int indel_score) {
   alignment a;
   unsigned int *matrix,
       x_size = strlen(seq1) + 1,
       y_size = strlen(seq2) + 1;
 
-  matrix = _make_matrix(x_size, y_size);
-  _align(matrix, x_size, y_size, seq1, seq2);
+  matrix = _make_matrix(x_size, y_size, indel_score);
+  _align(matrix, x_size, y_size, seq1, seq2, indel_score);
   a = _find_min(matrix, x_size, y_size);
   free(matrix);
 
