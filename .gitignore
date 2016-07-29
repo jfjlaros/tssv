@@ -1,0 +1,11 @@
+*.pyc
+*.swp
+.cache/
+build/
+dist/
+tssv.egg-info/
+tssv/debug
+tssv/sg_align.h.gch
+tssv/sg_align.o
+tssv/sg_align.py
+tssv/sg_align_wrap.c
