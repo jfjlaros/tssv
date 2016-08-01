@@ -28,7 +28,8 @@ import tssv as distmeta
 setup(
     name='tssv',
     ext_modules=[Extension('tssv/_sg_align', ['tssv/sg_align.c',
-        'tssv/sg_align.i'], swig_opts=[])],
+        'tssv/sg_align.i'], swig_opts=[],
+        extra_compile_args=['-O3'])],
     py_modules=['tssv.sg_align'],
     version=distmeta.__version__,
     description='Targeted characterisation of short structural variation.',
