@@ -259,11 +259,11 @@ void _init_matrix(
   array_t *_matrix = (array_t *)matrix;
   unsigned int i;
 
-  for (i = 0; i < columns; i++)
-    (*_matrix)[0][i] = i * indel_score;
-
   for (i = 1; i < rows; i++)
     (*_matrix)[i][0] = 0;
+
+  for (i = 0; i < columns; i++)
+    (*_matrix)[0][i] = i * indel_score;
 }//_init_matrix
 
 /*
