@@ -281,14 +281,14 @@ void _align(
     char *seq1, char *seq2, unsigned char indel_score) {
   typedef unsigned char array_t[rows][columns];
   array_t *_matrix = (array_t *)matrix;
-  unsigned int x,
-               y;
+  unsigned int r,
+               c;
 
-  for (x = 1; x < rows; x++)
-    for (y = 1; y < columns; y++)
-      (*_matrix)[x][y] = _min(
-        _min((*_matrix)[x - 1][y], (*_matrix)[x][y - 1]) + indel_score,
-        (*_matrix)[x - 1][y - 1] + (seq1[x - 1] != seq2[y - 1]));
+  for (r = 1; r < rows; r++)
+    for (c = 1; c < columns; c++)
+      (*_matrix)[r][c] = _min(
+        _min((*_matrix)[r - 1][c], (*_matrix)[r][c - 1]) + indel_score,
+        (*_matrix)[r - 1][c - 1] + (seq1[r - 1] != seq2[c - 1]));
 }//_align
 
 /*
@@ -307,14 +307,14 @@ alignment _find_min(
   typedef unsigned char array_t[rows][columns];
   array_t *_matrix = (array_t *)matrix;
   alignment a;
-  unsigned int x;
+  unsigned int r;
 
   a.distance = columns - 1;
   a.position = 0;
-  for (x = 1; x < rows; x++)
-    if ((*_matrix)[x][columns - 1] < a.distance) {
-      a.distance = (*_matrix)[x][columns - 1];
-      a.position = x;
+  for (r = 1; r < rows; r++)
+    if ((*_matrix)[r][columns - 1] < a.distance) {
+      a.distance = (*_matrix)[r][columns - 1];
+      a.position = r;
     }
 
   return a;
