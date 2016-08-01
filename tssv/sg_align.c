@@ -4,16 +4,12 @@ Library with functions for a semi-global alignment.
 
 Two implementations are contained within this file:
 1. An implementation using SSE2 instructions, which is used on systems that
-   support these instructions. The SSE2 implementation uses a matrix of unsigned
-   chars instead of ints and stores the matrix diagonally. The implementation is
-   optimised for tall matrices; it will transpose the matrix if it is wide.
+   support these instructions. The SSE2 implementation uses a matrix of
+   unsigned chars instead of ints and stores the matrix diagonally. The
+   implementation is optimised for tall matrices.
    This implementation achieves a 3-4x performance improvement compaired to
    TSSV 0.2.5, on data consiting predominantly of reads of 200-300bp.
-2. A fallback implementation which is used if SSE2 is not available. Compared to
-   TSSV 0.2.5, this optimised implementation achieves about a 1.5x performance
-   improvement, most of which is attributable to allocating the alignment matrix
-   as a single block of memory and using pointers instead of array indices to
-   access it.
+2. A fallback implementation which is used if SSE2 is not available.
 */
 
 #include <string.h>
@@ -47,15 +43,13 @@ Initialise a matrix for semi-global alignment.
 :arg unsigned int rows: Number of rows in the matrix.
 :arg unsigned int columns: Number of columns in the matrix. MUST NOT be
   less than rows.
-:arg int transposed: Whether the matrix is transposed.
 :arg unsigned char indel_score: Penalty score for insertions and deletions.
 
 :returns unsigned char *: The alignment matrix. The actual matrix starts at the
   first 16-byte aligned byte and is stored diagonally.
 */
 unsigned char *_make_matrix(
-    unsigned int rows, unsigned int columns, int transposed,
-    unsigned char indel_score) {
+    unsigned int rows, unsigned int columns, unsigned char indel_score) {
   unsigned int width = ((rows+14) & ~0x0F) + 16,
                height = columns + rows - 1;
   unsigned char *mem = malloc(width * height + 16),
@@ -66,32 +60,16 @@ unsigned char *_make_matrix(
   unsigned int i,
                j;
 
-  if (transposed) {
-    // Set the first column to 0.
-    for (i = 0, cell = matrix; i < columns; i++, cell += width)
-      *cell = 0;
+  // Set the first column to 0.
+  for (i = 0, cell = matrix; i < columns; i++, cell += width)
+    *cell = 0;
 
-    // Set the first row to 0, 1, 2, 3, 4, ... times the indel_score
-    for (i = 0, cell = matrix, score = 0; i < rows; i++, cell += width + 1) {
-      *cell = score;
-      score = (score > 255 - indel_score)? 255 : score + indel_score;
-      for (j = 1; j < (width - i); j++)
-        *(cell + j) = 255;  // This protects the second row.
-    }
-  }
-  else {
-    // Set the first column to 0, 1, 2, 3, 4, ... times the indel_score
-    for (i = 0, cell = matrix, score = 0; i < columns; i++, cell += width) {
-      *cell = score;
-      score = (score > 255 - indel_score)? 255 : score + indel_score;
-    }
-
-    // Set the first row to 0.
-    for (i = 0, cell = matrix; i < rows; i++, cell += width + 1) {
-      *cell = 0;
-      for (j = 1; j < (width - i); j++)
-        *(cell + j) = 255;  // This protects the second row.
-    }
+  // Set the first row to 0, 1, 2, 3, 4, ... times the indel_score
+  for (i = 0, cell = matrix, score = 0; i < rows; i++, cell += width + 1) {
+    *cell = score;
+    score = (score > 255 - indel_score)? 255 : score + indel_score;
+    for (j = 1; j < (width - i); j++)
+      *(cell + j) = 255;  // This protects the second row.
   }
 
   return mem;
@@ -212,14 +190,12 @@ It is assumed that the number of rows is larger than the number of columns.
 :arg unsigned int rows: Number of rows in the matrix.
 :arg unsigned int columns: Number of columns in the matrix. MUST NOT be less
   than rows.
-:arg int transposed: Whether the matrix is transposed.
 
 :returns alignment: The minimum distance and its row number.
 :rtype: alignment
 */
 alignment _find_min(
-    unsigned char *mem, unsigned int rows, unsigned int columns,
-    int transposed) {
+    unsigned char *mem, unsigned int rows, unsigned int columns) {
   unsigned int width = ((rows+14) & ~0x0F) + 16,
                i;
   unsigned char *matrix = (unsigned char*)(((unsigned long int)mem + 15) &
@@ -228,25 +204,13 @@ alignment _find_min(
   alignment a;
 
   a.position = 0;
-  if (transposed) {
-    a.distance = rows - 1;
-    cell = matrix + (rows - 1) * width + rows - 1;
-    for (i = 0; i < columns; i++, cell += width)
-      if (*cell < a.distance) {
-        a.distance = *cell;
-        a.position = i;
-      }
-  }
-  else {
-    a.distance = columns - 1;
-    cell = matrix + (columns - 1) * width;
-    width++; // Saves us a +1 in the loop below...
-    for (i = 0; i < rows; i++, cell += width)
-      if (*cell < a.distance) {
-        a.distance = *cell;
-        a.position = i;
-      }
-  }
+  a.distance = rows - 1;
+  cell = matrix + (rows - 1) * width + rows - 1;
+  for (i = 0; i < columns; i++, cell += width)
+    if (*cell < a.distance) {
+      a.distance = *cell;
+      a.position = i;
+    }
 
   return a;
 }//_find_min
@@ -267,19 +231,11 @@ alignment align(char *seq1, char *seq2, unsigned char indel_score) {
   unsigned int rows = strlen(seq1) + 1,
                columns = strlen(seq2) + 1;
 
-  if (rows > columns) {
-    // The alignment is optimised for tall matrices, transpose it.
-    matrix = _make_matrix(columns, rows, 1, indel_score);
-    _align(matrix, columns, rows, seq2, seq1, indel_score);
-    a = _find_min(matrix, columns, rows, 1);
-    free(matrix);
-  }
-  else {
-    matrix = _make_matrix(rows, columns, 0, indel_score);
-    _align(matrix, rows, columns, seq1, seq2, indel_score);
-    a = _find_min(matrix, rows, columns, 0);
-    free(matrix);
-  }
+  // The alignment is optimised for tall matrices.
+  matrix = _make_matrix(columns, rows, indel_score);
+  _align(matrix, columns, rows, seq2, seq1, indel_score);
+  a = _find_min(matrix, columns, rows);
+  free(matrix);
   return a;
 }//align
 
