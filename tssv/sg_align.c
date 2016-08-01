@@ -20,24 +20,13 @@ Two implementations are contained within this file:
 #include <stdlib.h>
 #include "sg_align.h"
 
-#if defined(__GNUC__) && defined(__SSE2__)
-#  include <xmmintrin.h>
-#  include <emmintrin.h>
-/******************************************************************************
-  SSE2-enabled Implementation
-******************************************************************************/
-
-
 /*
 Calculate the minimum of two values.
 
-:arg a: A value.
-:type a: char
-:arg b: A value.
-:type b: char
+:arg unsigned char a: A value.
+:arg unsigned char b: A value.
 
-:returns: The minimum of {a} and {b}.
-:rtype: char
+:returns unsigned char: The minimum of {a} and {b}.
 */
 inline unsigned char _min(unsigned char a, unsigned char b) {
   if (a < b)
@@ -45,32 +34,37 @@ inline unsigned char _min(unsigned char a, unsigned char b) {
   return b;
 }//_min
 
+#if defined(__GNUC__) && defined(__SSE2__)
+/******************************************************************************
+  SSE2-enabled Implementation
+******************************************************************************/
+#  include <xmmintrin.h>
+#  include <emmintrin.h>
 
 /*
 Initialise a matrix for semi-global alignment.
 
-:arg x_size: Size of the x dimension of the matrix.
-:type x_size: int
-:arg y_size: Size of the y dimension of the matrix. MUST NOT be less
-than x_size.
-:type y_size: int
-:arg transposed: Whether the matrix is transposed.
-:type transposed: int
-:arg indel_score: Penalty score for insertions and deletions.
-:type indel_score: char
+:arg unsigned int x_size: Size of the x dimension of the matrix.
+:arg unsigned int y_size: Size of the y dimension of the matrix. MUST NOT be
+  less than x_size.
+:arg int transposed: Whether the matrix is transposed.
+:arg unsigned char indel_score: Penalty score for insertions and deletions.
 
-:returns: The alignment matrix. The actual matrix starts at the first
-16-byte aligned byte and is stored diagonally.
-:rtype: char *
+:returns unsigned char *: The alignment matrix. The actual matrix starts at the
+  first 16-byte aligned byte and is stored diagonally.
 */
-unsigned char *_make_matrix(unsigned int x_size, unsigned int y_size, int transposed, unsigned char indel_score) {
+unsigned char *_make_matrix(
+    unsigned int x_size, unsigned int y_size, int transposed,
+    unsigned char indel_score) {
   unsigned int width = ((x_size+14) & ~0x0F) + 16,
-    height = y_size + x_size - 1;
+               height = y_size + x_size - 1;
   unsigned char *mem = malloc(width * height + 16),
-    *matrix = (unsigned char*)(((unsigned long int)mem + 15) & ~(unsigned long int)0x0F),
-    *cell,
-    score;
-  unsigned int i, j;
+                *matrix = (unsigned char*)(((unsigned long int)mem + 15) &
+                  ~(unsigned long int)0x0F),
+                *cell,
+                score;
+  unsigned int i,
+               j;
 
   if (transposed) {
     // Set the first column to 0.
@@ -106,14 +100,11 @@ unsigned char *_make_matrix(unsigned int x_size, unsigned int y_size, int transp
 /*
 Reverse a sequence.
 
-:arg seq: Sequence to reverse.
-:type seq: char *
-:arg seqr: Pointer to a buffer that will receive the reversed sequence.
-:type seqr: char *
-:arg len: Length of the sequence, excluding the terminating NUL byte.
-:type len: size_t
+:arg char *seq: Sequence to reverse.
+:arg char *seqr: Pointer to a buffer that will receive the reversed sequence.
+:arg size_t len: Length of the sequence, excluding the terminating NUL byte.
 */
-void revseq(char* seq, char* seqr, size_t len){
+void revseq(char *seq, char *seqr, size_t len){
   char *p = seq, *q = seqr + len;
   *(q--) = 0;
   while (q >= seqr)
@@ -123,29 +114,27 @@ void revseq(char* seq, char* seqr, size_t len){
 /*
 Fill the alignment matrix.
 
-:arg mem: The alignment matrix. The actual matrix is assumed to start at
-the first 16-byte aligned byte.
-:type mem: char *
-:arg x_size: Size of the x dimension of the matrix.
-:type x_size: int
-:arg y_size: Size of the y dimension of the matrix.
-:type y_size: int
-:arg seq1: The first sequence to be aligned.
-:type seq1: char *
-:arg seq2: The second sequence to be aligned.
-:type seq2: char *
-:arg indel_score: Penalty score for insertions and deletions.
-:type indel_score: char
+:arg unsigned char *mem: The alignment matrix. The actual matrix is assumed to
+  start at the first 16-byte aligned byte.
+:arg unsigned int x_size: Size of the x dimension of the matrix.
+:arg unsigned int y_size: Size of the y dimension of the matrix.
+:arg char *seq1: The first sequence to be aligned.
+:arg char *seq2: The second sequence to be aligned.
+:arg unsigned char indel_score: Penalty score for insertions and deletions.
 */
-void _align(unsigned char *mem, unsigned int x_size, unsigned int y_size, char *seq1, char *seq2, unsigned char indel_score) {
-  unsigned int x = 1, y = 1,
-    width = ((x_size+14) & ~0x0F) + 16,
-    end = y_size + _min(15, x_size - 1),
-    limit;
-  unsigned char *matrix = (unsigned char*)(((unsigned long int)mem + 15) & ~(unsigned long int)0x0F),
-    *d = matrix,
-    *l = matrix + width,
-    *i = l + width + 1;
+void _align(
+    unsigned char *mem, unsigned int x_size, unsigned int y_size,
+    char *seq1, char *seq2, unsigned char indel_score) {
+  unsigned int x = 1,
+               y = 1,
+               width = ((x_size+14) & ~0x0F) + 16,
+               end = y_size + _min(15, x_size - 1),
+               limit;
+  unsigned char *matrix = (unsigned char*)(((unsigned long int)mem + 15) &
+                  ~(unsigned long int)0x0F),
+                *d = matrix,
+                *l = matrix + width,
+                *i = l + width + 1;
 
   // Get copy of seq1 and reverse of seq2, making sure
   // that we can read 16 bytes (of garbage) past the end.
@@ -175,7 +164,8 @@ void _align(unsigned char *mem, unsigned int x_size, unsigned int y_size, char *
     else
       // Need to make sure the top row and left column stay valid.
       // This is VERY MUCH SLOWER than the above.
-      _mm_maskmoveu_si128(mi, _mm_cmplt_epi8(range, _mm_set1_epi8(limit)), (char*)i);
+      _mm_maskmoveu_si128(mi, _mm_cmplt_epi8(
+        range, _mm_set1_epi8(limit)), (char*)i);
 
     if (++y < end) {
       // Move down one row.
@@ -217,25 +207,24 @@ found, also return the row number.
 
 It is assumed that the number of rows is larger than the number of columns.
 
-:arg mem: An {x_size} * {y_size} matrix. The actual matrix is assumed
-to start at the first 16-byte aligned byte.
-:type mem: char *
-:arg x_size: Size of the x dimension of the matrix.
-:type x_size: int
-:arg y_size: Size of the y dimension of the matrix. MUST NOT be less
-than x_size.
-:type y_size: int
-:arg transposed: Whether the matrix is transposed.
-:type transposed: int
+:arg unsigned char *mem: An {x_size} * {y_size} matrix. The actual matrix is
+  assumed to start at the first 16-byte aligned byte.
+:arg unsigned int x_size: Size of the x dimension of the matrix.
+:arg unsigned int y_size: Size of the y dimension of the matrix. MUST NOT be
+  less than x_size.
+:arg int transposed: Whether the matrix is transposed.
 
-:returns: The minimum distance and its row number.
+:returns alignment: The minimum distance and its row number.
 :rtype: alignment
 */
-alignment _find_min(unsigned char *mem, unsigned int x_size, unsigned int y_size, int transposed) {
+alignment _find_min(
+    unsigned char *mem, unsigned int x_size, unsigned int y_size,
+    int transposed) {
   unsigned int width = ((x_size+14) & ~0x0F) + 16,
-    i;
-  unsigned char *matrix = (unsigned char*)(((unsigned long int)mem + 15) & ~(unsigned long int)0x0F),
-    *cell;
+               i;
+  unsigned char *matrix = (unsigned char*)(((unsigned long int)mem + 15) &
+                  ~(unsigned long int)0x0F),
+                *cell;
   alignment a;
 
   a.position = 0;
@@ -265,24 +254,18 @@ alignment _find_min(unsigned char *mem, unsigned int x_size, unsigned int y_size
 /*
 Do a semi-global alignment of {seq2} to {seq1}.
 
-:arg seq1: The sequence to be aligned to.
-:type seq1: char *
-:arg seq2: The sequence to be aligned.
-:type seq2: char *
-:arg indel_score: Penalty score for insertions and deletions (max 255).
-:type indel_score: int
+:arg char *seq1: The sequence to be aligned to.
+:arg char *seq2: The sequence to be aligned.
+:arg unsigned char indel_score: Penalty score for insertions and deletions (max
+  255).
 
-:returns: The minimum distance and its row number.
-:rtype: alignment
+:returns alignment: The minimum distance and its row number.
 */
-alignment align(char *seq1, char *seq2, unsigned int indel_score) {
+alignment align(char *seq1, char *seq2, unsigned char indel_score) {
   alignment a;
   unsigned char *matrix;
   unsigned int x_size = strlen(seq1) + 1,
-    y_size = strlen(seq2) + 1;
-
-  if (indel_score > 255)
-    indel_score = 255;
+               y_size = strlen(seq2) + 1;
 
   if (x_size > y_size) {
     // The alignment is optimised for tall matrices, transpose it.
@@ -308,21 +291,17 @@ alignment align(char *seq1, char *seq2, unsigned int indel_score) {
 /*
 Initialise a matrix for semi-global alignment.
 
-:arg matrix: The alignment matrix.
-:type matrix: int *
-:arg x_size: Size of the x dimension of the matrix.
-:type x_size: int
-:arg x_size: Size of the y dimension of the matrix.
-:type y_size: int
-:arg indel_score: Penalty score for insertions and deletions.
-:type indel_score: int
+:arg unsigned char *matrix: The alignment matrix.
+:arg unsigned int x_size: Size of the x dimension of the matrix.
+:arg unsigned int x_size: Size of the y dimension of the matrix.
+:arg unsigned char indel_score: Penalty score for insertions and deletions.
 */
 void _init_matrix(
-    int *matrix, unsigned int x_size, unsigned int y_size,
-    unsigned int indel_score) {
-  typedef int array_t[x_size][y_size];
+    unsigned char *matrix, unsigned int x_size, unsigned int y_size,
+    unsigned char indel_score) {
+  typedef unsigned char array_t[x_size][y_size];
   array_t *_matrix = (array_t *)matrix;
-  int i;
+  unsigned int i;
 
   for (i = 0; i < y_size; i++)
     (*_matrix)[0][i] = i * indel_score;
@@ -332,51 +311,28 @@ void _init_matrix(
 }//_init_matrix
 
 /*
-Calculate the minimum of two values.
-
-:arg a: A value.
-:type a: int
-:arg b: A value.
-:type b: int
-
-:returns: The minimum of {a} and {b}.
-:rtype: int
-*/
-inline unsigned int _min(unsigned int a, unsigned int b) {
-  if (a < b)
-    return a;
-  return b;
-}//_min
-
-/*
 Fill the alignment matrix.
 
-:arg matrix: The alignment matrix.
-:type matrix: int *
-:arg x_size: Size of the x dimension of the matrix.
-:type x_size: int
-:arg y_size: Size of the y dimension of the matrix.
-:type y_size: int
-:arg seq1: The sequence to be aligned to.
-:type seq1: char *
-:arg seq2: The sequence to be aligned.
-:type seq2: char *
-:arg indel_score: Penalty score for insertions and deletions.
-:type indel_score: int
+:arg unsigned char *matrix: The alignment matrix.
+:arg unsigned int x_size: Size of the x dimension of the matrix.
+:arg unsigned int y_size: Size of the y dimension of the matrix.
+:arg char *seq1: The sequence to be aligned to.
+:arg char *seq2: The sequence to be aligned.
+:arg unsigned char indel_score: Penalty score for insertions and deletions.
 */
 void _align(
-    int *matrix, int x_size, int y_size, char *seq1, char *seq2,
-    unsigned int indel_score) {
-  typedef int array_t[x_size][y_size];
+    unsigned char *matrix, unsigned int x_size, unsigned int y_size,
+    char *seq1, char *seq2, unsigned char indel_score) {
+  typedef unsigned char array_t[x_size][y_size];
   array_t *_matrix = (array_t *)matrix;
-  int x,
-      y;
+  unsigned int x,
+               y;
 
   for (x = 1; x < x_size; x++)
     for (y = 1; y < y_size; y++)
       (*_matrix)[x][y] = _min(
         _min((*_matrix)[x - 1][y], (*_matrix)[x][y - 1]) + indel_score,
-        (*_matrix)[x - 1][y - 1] + (int)(seq1[x - 1] != seq2[y - 1]));
+        (*_matrix)[x - 1][y - 1] + (seq1[x - 1] != seq2[y - 1]));
 }//_align
 
 /*
@@ -384,21 +340,18 @@ Find the minimum distance, ignoring a trailing gap in the sequence associated
 with the number of rows in an alignment matrix. If the minimum distance is
 found, also return the row number.
 
-:arg matrix: An {x_size} * {y_size} matrix.
-:type matrix: int *
-:arg x_size: Size of the x dimension of the matrix.
-:type x_size: int
-:arg x_size: Size of the y dimension of the matrix.
-:type y_size: int
+:arg unsigned char *matrix: An {x_size} * {y_size} matrix.
+:arg unsigned int x_size: Size of the x dimension of the matrix.
+:arg unsigned int x_size: Size of the y dimension of the matrix.
 
-:returns: The minimum distance and its row number.
-:rtype: alignment
+:returns alignment: The minimum distance and its row number.
 */
-alignment _find_min(int *matrix, int x_size, int y_size) {
-  typedef int array_t[x_size][y_size];
+alignment _find_min(
+    unsigned char *matrix, unsigned int x_size, unsigned int y_size) {
+  typedef unsigned char array_t[x_size][y_size];
   array_t *_matrix = (array_t *)matrix;
   alignment a;
-  int x;
+  unsigned int x;
 
   a.distance = y_size - 1;
   a.position = 0;
@@ -414,21 +367,17 @@ alignment _find_min(int *matrix, int x_size, int y_size) {
 /*
 Do a semi-global alignment of {seq2} to {seq1}.
 
-:arg seq1: The sequence to be aligned to.
-:type seq1: char *
-:arg seq2: The sequence to be aligned.
-:type seq2: char *
-:arg indel_score: Penalty score for insertions and deletions.
-:type indel_score: int
+:arg char *seq1: The sequence to be aligned to.
+:arg char *seq2: The sequence to be aligned.
+:arg unsigned char indel_score: Penalty score for insertions and deletions.
 
-:returns: The minimum distance and its row number.
-:rtype: alignment
+:returns alignment: The minimum distance and its row number.
 */
-alignment align(char *seq1, char *seq2, unsigned int indel_score) {
+alignment align(char *seq1, char *seq2, unsigned char indel_score) {
   alignment a;
-  int x_size = strlen(seq1) + 1,
-      y_size = strlen(seq2) + 1,
-      *matrix = malloc(x_size * y_size * sizeof(int));
+  unsigned int x_size = strlen(seq1) + 1,
+               y_size = strlen(seq2) + 1;
+  unsigned char *matrix = malloc(x_size * y_size * sizeof(char));
 
   _init_matrix(matrix, x_size, y_size, indel_score);
   _align(matrix, x_size, y_size, seq1, seq2, indel_score);
