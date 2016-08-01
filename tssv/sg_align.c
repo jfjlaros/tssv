@@ -308,30 +308,28 @@ alignment align(char *seq1, char *seq2, unsigned int indel_score) {
 /*
 Initialise a matrix for semi-global alignment.
 
+:arg matrix: The alignment matrix.
+:type matrix: int *
 :arg x_size: Size of the x dimension of the matrix.
 :type x_size: int
 :arg x_size: Size of the y dimension of the matrix.
 :type y_size: int
 :arg indel_score: Penalty score for insertions and deletions.
 :type indel_score: int
-
-:returns: The alignment matrix.
-:rtype: int *
 */
-unsigned int *_make_matrix(unsigned int x_size, unsigned int y_size, unsigned int indel_score) {
-  unsigned int i,
-    *matrix = malloc(x_size * y_size * sizeof(int)),
-    *cell,
-    score;
+void _init_matrix(
+    int *matrix, unsigned int x_size, unsigned int y_size,
+    unsigned int indel_score) {
+  typedef int array_t[x_size][y_size];
+  array_t *_matrix = (array_t *)matrix;
+  int i;
 
-  for (i = 0, cell = matrix, score = 0; i < y_size; i++, cell++, score += indel_score)
-    *cell = score;
+  for (i = 0; i < y_size; i++)
+    (*_matrix)[0][i] = i * indel_score;
 
-  for (i = 0, cell = matrix; i < x_size; i++, cell += y_size)
-    *cell = 0;
-
-  return matrix;
-}//_make_matrix
+  for (i = 1; i < x_size; i++)
+    (*_matrix)[i][0] = 0;
+}//_init_matrix
 
 /*
 Calculate the minimum of two values.
@@ -366,17 +364,19 @@ Fill the alignment matrix.
 :arg indel_score: Penalty score for insertions and deletions.
 :type indel_score: int
 */
-void _align(unsigned int *matrix, unsigned int x_size, unsigned int y_size, char *seq1, char *seq2, unsigned int indel_score) {
-  unsigned int x, y,
-      *d = matrix,
-      *l = d + 1,
-      *u = d + y_size,
-      *i = l + y_size;
+void _align(
+    int *matrix, int x_size, int y_size, char *seq1, char *seq2,
+    unsigned int indel_score) {
+  typedef int array_t[x_size][y_size];
+  array_t *_matrix = (array_t *)matrix;
+  int x,
+      y;
 
-  for (x = 1; x < x_size; x++, d++, l++, u++, i++)
-    for (y = 1; y < y_size; y++, d++, l++, u++, i++)
-      *i = _min(_min(*l, *u) + indel_score,
-        *d + (unsigned int)(seq1[x - 1] != seq2[y - 1]));
+  for (x = 1; x < x_size; x++)
+    for (y = 1; y < y_size; y++)
+      (*_matrix)[x][y] = _min(
+        _min((*_matrix)[x - 1][y], (*_matrix)[x][y - 1]) + indel_score,
+        (*_matrix)[x - 1][y - 1] + (int)(seq1[x - 1] != seq2[y - 1]));
 }//_align
 
 /*
@@ -394,15 +394,17 @@ found, also return the row number.
 :returns: The minimum distance and its row number.
 :rtype: alignment
 */
-alignment _find_min(unsigned int *matrix, unsigned int x_size, unsigned int y_size) {
+alignment _find_min(int *matrix, int x_size, int y_size) {
+  typedef int array_t[x_size][y_size];
+  array_t *_matrix = (array_t *)matrix;
   alignment a;
-  unsigned int x, *cell;
+  int x;
 
   a.distance = y_size - 1;
   a.position = 0;
-  for (x = 1, cell = matrix + 2 * y_size - 1; x < x_size; x++, cell += y_size)
-    if (*cell < a.distance) {
-      a.distance = *cell;
+  for (x = 1; x < x_size; x++)
+    if ((*_matrix)[x][y_size - 1] < a.distance) {
+      a.distance = (*_matrix)[x][y_size - 1];
       a.position = x;
     }
 
@@ -424,11 +426,11 @@ Do a semi-global alignment of {seq2} to {seq1}.
 */
 alignment align(char *seq1, char *seq2, unsigned int indel_score) {
   alignment a;
-  unsigned int *matrix,
-      x_size = strlen(seq1) + 1,
-      y_size = strlen(seq2) + 1;
+  int x_size = strlen(seq1) + 1,
+      y_size = strlen(seq2) + 1,
+      *matrix = malloc(x_size * y_size * sizeof(int));
 
-  matrix = _make_matrix(x_size, y_size, indel_score);
+  _init_matrix(matrix, x_size, y_size, indel_score);
   _align(matrix, x_size, y_size, seq1, seq2, indel_score);
   a = _find_min(matrix, x_size, y_size);
   free(matrix);
