@@ -280,7 +280,7 @@ void _align(
   typedef char array_t[rows][columns];
   array_t *_matrix = (array_t *)matrix;
   int r,
-               c;
+      c;
 
   for (r = 1; r < rows; r++)
     for (c = 1; c < columns; c++)
@@ -329,7 +329,7 @@ Do a semi-global alignment of {seq2} to {seq1}.
 alignment align(char *seq1, char *seq2, char indel_score) {
   alignment a;
   int rows = strlen(seq1) + 1,
-               columns = strlen(seq2) + 1;
+             columns = strlen(seq2) + 1;
   char *matrix = malloc(rows * columns * sizeof(char));
 
   _init_matrix(matrix, rows, columns, indel_score);
