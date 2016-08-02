@@ -19,10 +19,10 @@ Two implementations are contained within this file:
 /*
 Calculate the minimum of two values.
 
-:arg int a: A value.
-:arg int b: A value.
+:arg char a: A value.
+:arg char b: A value.
 
-:returns int: The minimum of {a} and {b}.
+:returns char: The minimum of {a} and {b}.
 */
 static inline char _min(char a, char b) {
   if (a < b)
