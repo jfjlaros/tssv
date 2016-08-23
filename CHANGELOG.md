@@ -1,5 +1,12 @@
 # TSSV changelog
 
+23 August, 2016:
+* Added unit tests.
+* Switched to continuous 2d-array in original implementation.
+* Enabled more compiler optimisations.
+* Removed non-transposed code (never used).
+* General refactoring.
+
 9 June, 2016:
 * Added -n/--indel-score argument.
 * Fixed bug that caused TSSV to install the compiled _sg_align module into the
