@@ -1,6 +1,9 @@
 # TSSV changelog
 
 23 August, 2016:
+* Released version 0.4.0.
+
+23 August, 2016:
 * Added unit tests.
 * Switched to continuous 2d-array in original implementation.
 * Enabled more compiler optimisations.
