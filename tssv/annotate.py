@@ -8,7 +8,6 @@ The input file is typically one of the output files of tssv.
 
 import argparse
 import collections
-import numpy
 import sys
 
 import requests
@@ -41,24 +40,25 @@ def annotate(alleles_handle, reference, report_handle, minimum):
     :arg stream report_handle: Open writeable handle to the report file.
     :arg int minimum: Minimum count.
     """
-    alleles = collections.defaultdict(lambda: numpy.array([0, 0, 0]))
-    raw_vars = collections.defaultdict(lambda: numpy.array([0, 0, 0]))
-    classification = collections.defaultdict(lambda: numpy.array([0, 0, 0]))
+    alleles = collections.defaultdict(lambda: [0, 0, 0])
+    raw_vars = collections.defaultdict(lambda: [0, 0, 0])
+    classification = collections.defaultdict(lambda: [0, 0, 0])
 
-    data = map(lambda x: x.strip('\n').split('\t'),
-        alleles_handle.readlines()[1:])
+    data = list(map(
+        lambda x: x.strip('\n').split('\t'), alleles_handle.readlines()[1:]))
     for i in data:
         allele_description = requests.get(
             'https://mutalyzer.nl/json/descriptionExtract?' +
             'reference={}&observed={}'.format(reference, i[0])).json()
-        encountered = map(int, (i[1:]))
+        encountered = list(map(int, (i[1:])))
 
-        alleles[allele_description['description']] += encountered
+        alleles[allele_description['description']] = list(map(
+            sum, zip(alleles[allele_description['description']], encountered)))
         for j in allele_description['allele']:
-            raw_vars[j['description']] += encountered
-            classification[j['type']] += encountered
-        #for
-    #for
+            raw_vars[j['description']] = list(map(
+                sum, zip(raw_vars[j['description']], encountered)))
+            classification[j['type']] = list(map(
+                sum, zip(classification[j['type']], encountered)))
 
     write_table(alleles, 'allele', report_handle, minimum)
     report_handle.write('\n')
