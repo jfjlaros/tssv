@@ -1,6 +1,7 @@
 *.pyc
 *.swp
 .cache/
+.tox
 build/
 dist/
 tssv.egg-info/

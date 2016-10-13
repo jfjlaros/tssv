@@ -5,6 +5,9 @@ alleles and single variants. Also report statistics about the variant types.
 
 The input file is typically one of the output files of tssv.
 """
+from __future__ import (
+    absolute_import, division, print_function, unicode_literals)
+from future.builtins import str, zip
 
 import argparse
 import collections
@@ -93,7 +96,7 @@ def main():
 
     try:
         annotate(args.alleles, args.reference, args.report, args.minimum)
-    except OSError, error:
+    except OSError as error:
         parser.error(error)
 
 

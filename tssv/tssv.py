@@ -460,7 +460,7 @@ def main():
     try:
         tssv(args.fasta, args.lib, args.report, args.path, args.mismatches,
             args.minimum, args.fastq, args.indel_score)
-    except OSError, error:
+    except OSError as error:
         parser.error(error)
 
 
