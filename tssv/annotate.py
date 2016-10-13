@@ -13,9 +13,7 @@ import collections
 import numpy
 import sys
 
-from suds import client
-
-URL = "https://mutalyzer.nl/services/?wsdl"
+import requests
 
 def write_table(data, title, report_handle, minimum):
     """
@@ -57,21 +55,20 @@ def annotate(alleles_handle, reference, report_handle, minimum):
     alleles = collections.defaultdict(lambda: numpy.array([0, 0, 0]))
     raw_vars = collections.defaultdict(lambda: numpy.array([0, 0, 0]))
     classification = collections.defaultdict(lambda: numpy.array([0, 0, 0]))
-    service = client.Client(URL).service
 
     data = map(lambda x: x.strip('\n').split('\t'),
         alleles_handle.readlines()[1:])
     for i in data:
-        allele_description = service.descriptionExtract(reference=reference,
-            observed=i[0])
+        allele_description = requests.get(
+            'https://mutalyzer.nl/json/descriptionExtract?' +
+            'reference={}&observed={}'.format(reference, i[0])).json()
         encountered = map(int, (i[1:]))
 
-        alleles[allele_description.description] += encountered
-        for j in allele_description.allele:
-            for k in j[1]:
-                raw_vars[k.hgvs] += encountered
-                classification[k.type] += encountered
-            #for
+        alleles[allele_description['description']] += encountered
+        for j in allele_description['allele']:
+            raw_vars[j['description']] += encountered
+            classification[j['type']] += encountered
+        #for
     #for
 
     write_table(alleles, "allele", report_handle, minimum)
