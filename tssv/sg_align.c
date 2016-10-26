@@ -24,7 +24,7 @@ Calculate the minimum of two values.
 
 :returns char: The minimum of {a} and {b}.
 */
-static inline char _min(char a, char b) {
+static __inline char _min(char a, char b) {
   if (a < b)
     return a;
   return b;
