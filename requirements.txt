@@ -1,5 +1,6 @@
 biopython
 fastools
+fake-open
 future
 pytest
 requests
