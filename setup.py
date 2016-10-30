@@ -1,11 +1,17 @@
 # Patch for swig.
-from distutils.command.build import build as _build
-_build.sub_commands = [
-    ('build_ext', _build.has_ext_modules),
-    ('build_py', _build.has_pure_modules),
-    ('build_clib', _build.has_c_libraries),
-    ('build_scripts', _build.has_scripts)
-]
+from distutils.command.build import build
+from setuptools.command.install import install
+
+class CustomBuild(build):
+    def run(self):
+        self.run_command('build_ext')
+        build.run(self)
+
+
+class CustomInstall(install):
+    def run(self):
+        self.run_command('build_ext')
+        self.do_egg_install()
 
 import sys
 from setuptools import setup
@@ -27,11 +33,11 @@ except ImportError:
 import tssv as distmeta
 
 setup(
+    cmdclass={'build': CustomBuild, 'install': CustomInstall},
     name='tssv',
-    ext_modules=[Extension('tssv/_sg_align', ['tssv/sg_align.c',
-        'tssv/sg_align.i'], swig_opts=[],
+    ext_modules=[Extension('tssv/_sg_align',
+        ['tssv/sg_align.c', 'tssv/sg_align.i'],
         extra_compile_args=['-O3'])],
-    py_modules=['tssv.sg_align'],
     version=distmeta.__version__,
     description='Targeted characterisation of short structural variation.',
     long_description=distmeta.__doc__,
