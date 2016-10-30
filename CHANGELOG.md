@@ -1,6 +1,9 @@
 # TSSV changelog
 
 30 October, 2016:
+* Released version 0.4.1.
+
+30 October, 2016:
 * Python 3 support.
 * Full testing with tox.
 * Implemented more robust SWIG fix.
