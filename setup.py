@@ -16,6 +16,7 @@ if sys.version_info < (2, 6):
 
 # Todo: How does this play with pip freeze requirement files?
 requires = ['biopython', 'fastools', 'future', 'requests']
+tests_requires = ['fake-open', 'pytest', 'tox']
 
 # Python 2.6 does not include the argparse module.
 try:
@@ -41,6 +42,8 @@ setup(
     platforms=['any'],
     packages=['tssv'],
     install_requires=requires,
+    tests_require=tests_requires,
+    package_data={'tssv': ['sg_align.h']},
     entry_points = {
         'console_scripts': [
             'tssv = tssv.tssv:main',
