@@ -253,15 +253,13 @@ Initialise a matrix for semi-global alignment.
 :arg char indel_score: Penalty score for insertions and deletions.
 */
 void _init_matrix(char *matrix, int rows, int columns, char indel_score) {
-  typedef char array_t[rows][columns];
-  array_t *_matrix = (array_t *)matrix;
   int i;
 
   for (i = 1; i < rows; i++)
-    (*_matrix)[i][0] = 0;
+    *(matrix + i*columns) = 0;
 
   for (i = 0; i < columns; i++)
-    (*_matrix)[0][i] = i * indel_score;
+    *(matrix + i) = i * indel_score;
 }//_init_matrix
 
 /*
@@ -277,16 +275,14 @@ Fill the alignment matrix.
 void _align(
     char *matrix, int rows, int columns, char *seq1, char *seq2,
     char indel_score) {
-  typedef char array_t[rows][columns];
-  array_t *_matrix = (array_t *)matrix;
   int r,
       c;
 
   for (r = 1; r < rows; r++)
     for (c = 1; c < columns; c++)
-      (*_matrix)[r][c] = _min(
-        _min((*_matrix)[r - 1][c], (*_matrix)[r][c - 1]) + indel_score,
-        (*_matrix)[r - 1][c - 1] + (seq1[r - 1] != seq2[c - 1]));
+      *(matrix + r*columns + c) = _min(
+        _min(*(matrix + (r-1)*columns + c), *(matrix + r*columns + c-1)) + indel_score,
+        *(matrix + (r-1)*columns + c-1) + (seq1[r - 1] != seq2[c - 1]));
 }//_align
 
 /*
@@ -301,16 +297,14 @@ found, also return the row number.
 :returns alignment: The minimum distance and its row number.
 */
 alignment _find_min(char *matrix, int rows, int columns) {
-  typedef char array_t[rows][columns];
-  array_t *_matrix = (array_t *)matrix;
   alignment a;
   int r;
 
   a.distance = columns - 1;
   a.position = 0;
   for (r = 1; r < rows; r++)
-    if ((*_matrix)[r][columns - 1] < a.distance) {
-      a.distance = (*_matrix)[r][columns - 1];
+    if (*(matrix + r*columns + columns-1) < a.distance) {
+      a.distance = *(matrix + r*columns + columns-1);
       a.position = r;
     }
 
