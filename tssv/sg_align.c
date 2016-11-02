@@ -30,7 +30,7 @@ static __inline char _min(char a, char b) {
   return b;
 }
 
-#if defined(__GNUC__) && defined(__SSE2__)
+#if defined(_MSC_VER) || defined(__SSE2__)
 /******************************************************************************
   SSE2-enabled Implementation
 ******************************************************************************/
