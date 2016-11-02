@@ -114,14 +114,6 @@ void _align(
                 *l = matrix + width,
                 *i = l + width + 1;
 
-  // Get copy of seq1 and reverse of seq2, making sure
-  // that we can read 16 bytes (of garbage) past the end.
-  const size_t seq2len = strlen(seq2);
-  char *seq1f = malloc(strlen(seq1) + 16),
-       *seq2r = malloc(seq2len + 16);
-  strcpy(seq1f, seq1);
-  revseq(seq2, seq2r, seq2len);
-
   const __m128i ones = _mm_set1_epi8(1),
     indel_scores = _mm_set1_epi8(indel_score),
     range = _mm_set_epi8(15, 14, 13, 12, 11, 10, 9, 8, 7 ,6, 5, 4, 3, 2, 1, 0);
@@ -129,8 +121,18 @@ void _align(
           md = _mm_load_si128((__m128i*)d),
           ml = _mm_load_si128((__m128i*)l),
           mu = _mm_loadu_si128((__m128i*)(l + 1)),
-          mx = _mm_loadu_si128((__m128i*)seq1f),
-          my = _mm_loadu_si128((__m128i*)(seq2r + seq2len - 1));
+          mx,
+		  my;
+
+  // Get copy of seq1 and reverse of seq2, making sure
+  // that we can read 16 bytes (of garbage) past the end.
+  const size_t seq2len = strlen(seq2);
+  char *seq1f = malloc(strlen(seq1) + 16),
+       *seq2r = malloc(seq2len + 16);
+  strcpy(seq1f, seq1);
+  revseq(seq2, seq2r, seq2len);
+  mx = _mm_loadu_si128((__m128i*)seq1f);
+  my = _mm_loadu_si128((__m128i*)(seq2r + seq2len - 1));
 
   while (1) {
     mi = _mm_min_epu8(_mm_adds_epu8(_mm_min_epu8(ml, mu), indel_scores),
