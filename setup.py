@@ -35,7 +35,7 @@ import tssv as distmeta
 setup(
     cmdclass={'build': CustomBuild, 'install': CustomInstall},
     name='tssv',
-    ext_modules=[Extension('tssv/_sg_align',
+    ext_modules=[Extension('tssv._sg_align',
         ['tssv/sg_align.c', 'tssv/sg_align.i'],
         extra_compile_args=['-O3'])],
     version=distmeta.__version__,
