@@ -3,6 +3,9 @@ TSSV is a program that does targeted characterisation of short structural
 variation. It can be used for STR analysis, or any other type of targeted
 analysis. It characterises any variation between a set of user-defined markers.
 
+TSSV is platform-independent. It has been tested on Linux, macOS, and Windows
+and it runs on Python 2 and Python 3.
+
 Development of TSSV is hosted
 [on our GitLab server](https://git.lumc.nl/j.f.j.laros/tssv).
 
@@ -13,6 +16,10 @@ libraries. Also a package that provides `Python.h` should be installed. For
 Debian based systems, the following command will install these packages:
 
     apt-get install libpython-dev swig gcc
+
+On Windows and macOS, you will be prompted to install a C compiler while
+installing TSSV if you do not have one. You will need to download `swig` from
+[swig.org](http://swig.org/) manually.
 
 If you have installed the `pip` package installer, you can easily install
 TSSV by typing:
