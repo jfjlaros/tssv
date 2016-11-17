@@ -30,7 +30,7 @@ static __inline char _min(char a, char b) {
   return b;
 }
 
-#if defined(__GNUC__) && defined(__SSE2__)
+#if defined(_MSC_VER) || defined(__SSE2__)
 /******************************************************************************
   SSE2-enabled Implementation
 ******************************************************************************/
@@ -114,14 +114,6 @@ void _align(
                 *l = matrix + width,
                 *i = l + width + 1;
 
-  // Get copy of seq1 and reverse of seq2, making sure
-  // that we can read 16 bytes (of garbage) past the end.
-  const size_t seq2len = strlen(seq2);
-  char *seq1f = malloc(strlen(seq1) + 16),
-       *seq2r = malloc(seq2len + 16);
-  strcpy(seq1f, seq1);
-  revseq(seq2, seq2r, seq2len);
-
   const __m128i ones = _mm_set1_epi8(1),
     indel_scores = _mm_set1_epi8(indel_score),
     range = _mm_set_epi8(15, 14, 13, 12, 11, 10, 9, 8, 7 ,6, 5, 4, 3, 2, 1, 0);
@@ -129,8 +121,18 @@ void _align(
           md = _mm_load_si128((__m128i*)d),
           ml = _mm_load_si128((__m128i*)l),
           mu = _mm_loadu_si128((__m128i*)(l + 1)),
-          mx = _mm_loadu_si128((__m128i*)seq1f),
-          my = _mm_loadu_si128((__m128i*)(seq2r + seq2len - 1));
+          mx,
+		  my;
+
+  // Get copy of seq1 and reverse of seq2, making sure
+  // that we can read 16 bytes (of garbage) past the end.
+  const size_t seq2len = strlen(seq2);
+  char *seq1f = malloc(strlen(seq1) + 16),
+       *seq2r = malloc(seq2len + 16);
+  strcpy(seq1f, seq1);
+  revseq(seq2, seq2r, seq2len);
+  mx = _mm_loadu_si128((__m128i*)seq1f);
+  my = _mm_loadu_si128((__m128i*)(seq2r + seq2len - 1));
 
   while (1) {
     mi = _mm_min_epu8(_mm_adds_epu8(_mm_min_epu8(ml, mu), indel_scores),
@@ -253,15 +255,13 @@ Initialise a matrix for semi-global alignment.
 :arg char indel_score: Penalty score for insertions and deletions.
 */
 void _init_matrix(char *matrix, int rows, int columns, char indel_score) {
-  typedef char array_t[rows][columns];
-  array_t *_matrix = (array_t *)matrix;
   int i;
 
   for (i = 1; i < rows; i++)
-    (*_matrix)[i][0] = 0;
+    *(matrix + i*columns) = 0;
 
   for (i = 0; i < columns; i++)
-    (*_matrix)[0][i] = i * indel_score;
+    *(matrix + i) = i * indel_score;
 }//_init_matrix
 
 /*
@@ -277,16 +277,14 @@ Fill the alignment matrix.
 void _align(
     char *matrix, int rows, int columns, char *seq1, char *seq2,
     char indel_score) {
-  typedef char array_t[rows][columns];
-  array_t *_matrix = (array_t *)matrix;
   int r,
       c;
 
   for (r = 1; r < rows; r++)
     for (c = 1; c < columns; c++)
-      (*_matrix)[r][c] = _min(
-        _min((*_matrix)[r - 1][c], (*_matrix)[r][c - 1]) + indel_score,
-        (*_matrix)[r - 1][c - 1] + (seq1[r - 1] != seq2[c - 1]));
+      *(matrix + r*columns + c) = _min(
+        _min(*(matrix + (r-1)*columns + c), *(matrix + r*columns + c-1)) + indel_score,
+        *(matrix + (r-1)*columns + c-1) + (seq1[r - 1] != seq2[c - 1]));
 }//_align
 
 /*
@@ -301,16 +299,14 @@ found, also return the row number.
 :returns alignment: The minimum distance and its row number.
 */
 alignment _find_min(char *matrix, int rows, int columns) {
-  typedef char array_t[rows][columns];
-  array_t *_matrix = (array_t *)matrix;
   alignment a;
   int r;
 
   a.distance = columns - 1;
   a.position = 0;
   for (r = 1; r < rows; r++)
-    if ((*_matrix)[r][columns - 1] < a.distance) {
-      a.distance = (*_matrix)[r][columns - 1];
+    if (*(matrix + r*columns + columns-1) < a.distance) {
+      a.distance = *(matrix + r*columns + columns-1);
       a.position = r;
     }
 
