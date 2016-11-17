@@ -1,5 +1,8 @@
 # TSSV changelog
 
+17 November, 2016:
+* Support for Windows and MacOS.
+
 30 October, 2016:
 * Released version 0.4.1.
 
