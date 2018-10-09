@@ -8,9 +8,9 @@ from future.builtins import str, zip
 from hashlib import md5
 from io import StringIO
 
-from tssv import annotate
-
 from fake_open import md5_check
+
+from tssv import annotate
 
 
 class TestAnnotation(object):
