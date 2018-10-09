@@ -11,10 +11,10 @@ Two implementations are contained within this file:
    TSSV 0.2.5, on data consiting predominantly of reads of 200-300bp.
 2. A fallback implementation which is used if SSE2 is not available.
 */
-
 #include <string.h>
 #include <stdlib.h>
 #include "sg_align.h"
+
 
 /*
 Calculate the minimum of two values.
@@ -29,6 +29,7 @@ static __inline char _min(char a, char b) {
     return a;
   return b;
 }
+
 
 #if defined(_MSC_VER) || defined(__SSE2__)
 /******************************************************************************
@@ -122,7 +123,7 @@ void _align(
           ml = _mm_load_si128((__m128i*)l),
           mu = _mm_loadu_si128((__m128i*)(l + 1)),
           mx,
-		  my;
+          my;
 
   // Get copy of seq1 and reverse of seq2, making sure
   // that we can read 16 bytes (of garbage) past the end.
@@ -241,6 +242,7 @@ alignment align(char *seq1, char *seq2, char indel_score) {
   return a;
 }//align
 
+
 #else
 /******************************************************************************
   Plain Implementation
@@ -283,7 +285,9 @@ void _align(
   for (r = 1; r < rows; r++)
     for (c = 1; c < columns; c++)
       *(matrix + r*columns + c) = _min(
-        _min(*(matrix + (r-1)*columns + c), *(matrix + r*columns + c-1)) + indel_score,
+        _min(
+          *(matrix + (r-1)*columns + c),
+          *(matrix + r*columns + c-1)) + indel_score,
         *(matrix + (r-1)*columns + c-1) + (seq1[r - 1] != seq2[c - 1]));
 }//_align
 
