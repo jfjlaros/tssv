@@ -4,6 +4,6 @@ python:
     - 3.5
     - 3.6
 install:
-    - apt install swig
+    - sudo apt install swig
     - pip install tox-travis
 script: tox
