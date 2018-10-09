@@ -4,16 +4,15 @@ alleles and single variants. Also report statistics about the variant types.
 
 The input file is typically one of the output files of tssv.
 """
-import argparse
-import collections
-import sys
+from argparse import ArgumentParser, FileType, RawDescriptionHelpFormatter
+from collections import defaultdict
+from sys import stdout
 
-import requests
+from requests import get as req_get
 
 
 def write_table(data, title, report_handle, minimum):
-    """
-    Write a table to a file.
+    """Write a table to a file.
 
     :arg dict data: Dictionary containing counts per type.
     :arg str title: Name of the first column.
@@ -29,23 +28,22 @@ def write_table(data, title, report_handle, minimum):
 
 
 def annotate(alleles_handle, reference, report_handle, minimum):
-    """
-    Convert a csv files containing alleles and counts to HGVS descriptions of
-    alleles, single variants and variant types.
+    """Convert a csv files containing alleles and counts to HGVS descriptions
+    of alleles, single variants and variant types.
 
     :arg stream alleles_handle: Open handle to the alleles file.
     :arg str reference: The reference sequence.
     :arg stream report_handle: Open writeable handle to the report file.
     :arg int minimum: Minimum count.
     """
-    alleles = collections.defaultdict(lambda: [0, 0, 0])
-    raw_vars = collections.defaultdict(lambda: [0, 0, 0])
-    classification = collections.defaultdict(lambda: [0, 0, 0])
+    alleles = defaultdict(lambda: [0, 0, 0])
+    raw_vars = defaultdict(lambda: [0, 0, 0])
+    classification = defaultdict(lambda: [0, 0, 0])
 
     data = list(map(
         lambda x: x.strip('\n').split('\t'), alleles_handle.readlines()[1:]))
     for i in data:
-        allele_description = requests.get(
+        allele_description = req_get(
             'https://mutalyzer.nl/json/descriptionExtract?' +
             'reference={}&observed={}'.format(reference, i[0])).json()
         encountered = list(map(int, (i[1:])))
@@ -66,22 +64,20 @@ def annotate(alleles_handle, reference, report_handle, minimum):
 
 
 def main():
-    """
-    Main entry point.
-    """
+    """Main entry point."""
     usage = __doc__.split('\n\n\n')
-    parser = argparse.ArgumentParser(
+    parser = ArgumentParser(
         description=usage[0], epilog=usage[1],
-        formatter_class=argparse.RawDescriptionHelpFormatter)
+        formatter_class=RawDescriptionHelpFormatter)
 
     parser.add_argument(
-        'alleles', metavar='alleles', type=argparse.FileType('r'),
+        'alleles', metavar='alleles', type=FileType('r'),
         help='the alleles file')
     parser.add_argument(
         'reference', metavar='reference', type=str,
         help='sequence of the reference allele')
     parser.add_argument(
-        '-r', dest='report', type=argparse.FileType('w'), default=sys.stdout,
+        '-r', dest='report', type=FileType('w'), default=stdout,
         help='name of the report file')
     parser.add_argument(
         '-a', dest='minimum', type=int, default=0,

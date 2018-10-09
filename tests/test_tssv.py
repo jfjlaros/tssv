@@ -1,6 +1,4 @@
-"""
-Tests for the annotation CLI.
-"""
+"""Tests for the annotation CLI."""
 from hashlib import md5
 from io import StringIO
 
@@ -10,9 +8,7 @@ from tssv import annotate
 
 
 class TestAnnotation(object):
-    """
-    Test the annotation CLI.
-    """
+    """Test the annotation CLI."""
     def setup(self):
         self._input = open('data/m1_newalleles.csv')
         self._output = StringIO()

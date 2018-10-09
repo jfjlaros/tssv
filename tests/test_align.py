@@ -1,6 +1,4 @@
-"""
-Tests for the alignment modules.
-"""
+"""Tests for the alignment modules."""
 from Bio import Seq
 
 from tssv import align_pair, sg_align
