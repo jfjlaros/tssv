@@ -1,14 +1,9 @@
-"""
-Convert a csv files containing alleles and counts to HGVS descriptions of
+"""Convert a csv files containing alleles and counts to HGVS descriptions of
 alleles and single variants. Also report statistics about the variant types.
 
 
 The input file is typically one of the output files of tssv.
 """
-from __future__ import (
-    absolute_import, division, print_function, unicode_literals)
-from future.builtins import str, zip
-
 import argparse
 import collections
 import sys
