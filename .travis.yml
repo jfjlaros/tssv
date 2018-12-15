@@ -6,5 +6,5 @@ python:
 install:
     - sudo apt update
     - sudo apt install swig
-    - pip install tox-travis
+    - pip install fake-open python-biopython tox-travis
 script: tox
