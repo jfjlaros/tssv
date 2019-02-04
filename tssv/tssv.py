@@ -54,7 +54,7 @@ def parse_library(library_handle, threshold):
     for i in data:
         pat = i[3].split()
         pattern = '^{}$'.format(''.join(map(
-            lambda x: ('({}){{},{}}'.format(pat[x], pat[x + 1], pat[x + 2])),
+            lambda x: ('({}){{{},{}}}'.format(pat[x], pat[x + 1], pat[x + 2])),
             range(0, len(pat), 3))))
 
         library[i[0]] = {
