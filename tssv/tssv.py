@@ -1,5 +1,6 @@
 from argparse import ArgumentParser, FileType, RawDescriptionHelpFormatter
 from collections import defaultdict
+from functools import reduce
 from math import ceil
 from os import mkdir
 from re import compile as re_compile
@@ -82,13 +83,13 @@ def open_files(path, markers):
     """
     mkdir(path)
     files = dict(map(lambda x: 
-        (x, open('{}{}'.format(path, file_names[x]), 'w')), file_names))
+        (x, open('{}/{}'.format(path, file_names[x]), 'w')), file_names))
     for i in markers:
-        marker_path = '{}{}'.format(path, i)
+        marker_path = '{}/{}'.format(path, i)
 
         mkdir(marker_path)
         files[i] = dict(map(lambda x:
-            (x, open('{}{}'.format(marker_path, marker_file_names[x]), 'w')),
+            (x, open('{}/{}'.format(marker_path, marker_file_names[x]), 'w')),
             marker_file_names))
 
     return files
@@ -300,7 +301,7 @@ def tssv(fasta_handle, library_handle, report_handle, path, threshold,
 
     for record in SeqIO.parse(fasta_handle, 'fastq' if is_fastq else 'fasta'):
         ref = [str(record.seq), Seq.reverse_complement(str(record.seq))]
-        ref_up = map(str.upper, ref)
+        ref_up = list(map(str.upper, ref))
         total += 1
         unknown = True
 
