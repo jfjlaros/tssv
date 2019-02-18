@@ -1,30 +1,25 @@
 /*
-Library with functions for a semi-global alignment.
-
-
-Two implementations are contained within this file:
-1. An implementation using SSE2 instructions, which is used on systems that
-   support these instructions. The SSE2 implementation uses a matrix of
-   unsigned chars instead of ints and stores the matrix diagonally. The
-   implementation is optimised for tall matrices.
-   This implementation achieves a 3-4x performance improvement compaired to
-   TSSV 0.2.5, on data consiting predominantly of reads of 200-300bp.
-2. A fallback implementation which is used if SSE2 is not available.
-*/
+ * Library for semi-global alignment.
+ *
+ * Two implementations are provided:
+ * - An implementation using SSE2 instructions.
+ * - A vanilla implementation.
+ */
 #include <string.h>
 #include <stdlib.h>
+
 #include "sg_align.h"
 
 
-/*
-Calculate the minimum of two values.
-
-:arg char a: A value.
-:arg char b: A value.
-
-:returns char: The minimum of {a} and {b}.
-*/
-static __inline char _min(char a, char b) {
+/**
+ * Calculate the minimum of two values.
+ *
+ * @arg {char} a - A value.
+ * @arg {char} b - A value.
+ *
+ * @return {char} - The minimum of {a} and {b}.
+ */
+inline char _min(char a, char b) {
   if (a < b)
     return a;
   return b;
@@ -32,23 +27,25 @@ static __inline char _min(char a, char b) {
 
 
 #if defined(_MSC_VER) || defined(__SSE2__)
-/******************************************************************************
-  SSE2-enabled Implementation
-******************************************************************************/
-#  include <xmmintrin.h>
-#  include <emmintrin.h>
-
 /*
-Initialise a matrix for semi-global alignment.
+ * SSE2 implementation.
+ */
+#include <xmmintrin.h>
+#include <emmintrin.h>
 
-:arg unsigned int rows: Number of rows in the matrix.
-:arg unsigned int columns: Number of columns in the matrix. MUST NOT be
-  less than rows.
-:arg unsigned char indel_score: Penalty score for insertions and deletions.
 
-:returns unsigned char *: The alignment matrix. The actual matrix starts at the
-  first 16-byte aligned byte and is stored diagonally.
-*/
+/**
+ * Initialise a matrix for semi-global alignment.
+ *
+ * @arg {unsigned int} rows - Number of rows in the matrix.
+ * @arg {unsigned int} columns - Number of columns in the matrix. MUST NOT be
+ *   less than rows.
+ * @arg {unsigned char} indel_score - Penalty score for insertions and
+ *   deletions.
+ *
+ * @return {unsigned char *} - The alignment matrix. The actual matrix starts
+ *   at the first 16-byte aligned byte and is stored diagonally.
+ */
 unsigned char *_make_matrix(
     unsigned int rows, unsigned int columns, unsigned char indel_score) {
   unsigned int width = ((rows+14) & ~0x0F) + 16,
@@ -74,33 +71,36 @@ unsigned char *_make_matrix(
   }
 
   return mem;
-}//_make_matrix
+}
 
-/*
-Reverse a sequence.
-
-:arg char *seq: Sequence to reverse.
-:arg char *seqr: Pointer to a buffer that will receive the reversed sequence.
-:arg size_t len: Length of the sequence, excluding the terminating NUL byte.
-*/
-void revseq(char *seq, char *seqr, size_t len){
+/**
+ * Reverse a sequence.
+ *
+ * @arg {char *} seq - Sequence to reverse.
+ * @arg {char *} seqr - Pointer to a buffer that will receive the reversed
+ *   sequence.
+ * @arg {size_t} len - Length of the sequence, excluding the terminating NULL
+ *   byte.
+ */
+void _revseq(char *seq, char *seqr, size_t len){
   char *p = seq, *q = seqr + len;
   *(q--) = 0;
   while (q >= seqr)
     *(q--) = *(p++);
 }
 
-/*
-Fill the alignment matrix.
-
-:arg unsigned char *mem: The alignment matrix. The actual matrix is assumed to
-  start at the first 16-byte aligned byte.
-:arg unsigned int rows: Number of rows in the matrix.
-:arg unsigned int columns: Number of columns in the matrix.
-:arg char *seq1: The first sequence to be aligned.
-:arg char *seq2: The second sequence to be aligned.
-:arg unsigned char indel_score: Penalty score for insertions and deletions.
-*/
+/**
+ * Fill the alignment matrix.
+ *
+ * @arg {unsigned char *} mem - The alignment matrix. The actual matrix is
+ *   assumed to start at the first 16-byte aligned byte.
+ * @arg {unsigned int} rows - Number of rows in the matrix.
+ * @arg {unsigned int} columns - Number of columns in the matrix.
+ * @arg {char *} seq1 - The first sequence to be aligned.
+ * @arg {char *} seq2 - The second sequence to be aligned.
+ * @arg {unsigned char} indel_score - Penalty score for insertions and
+ *   deletions.
+ */
 void _align(
     unsigned char *mem, unsigned int rows, unsigned int columns,
     char *seq1, char *seq2, unsigned char indel_score) {
@@ -131,7 +131,7 @@ void _align(
   char *seq1f = malloc(strlen(seq1) + 16),
        *seq2r = malloc(seq2len + 16);
   strcpy(seq1f, seq1);
-  revseq(seq2, seq2r, seq2len);
+  _revseq(seq2, seq2r, seq2len);
   mx = _mm_loadu_si128((__m128i*)seq1f);
   my = _mm_loadu_si128((__m128i*)(seq2r + seq2len - 1));
 
@@ -179,30 +179,29 @@ void _align(
 
   free(seq1f);
   free(seq2r);
-}//_align
+}
 
-/*
-Find the minimum distance, ignoring a trailing gap in the sequence associated
-with the number of rows in an alignment matrix. If the minimum distance is
-found, also return the row number.
-
-It is assumed that the number of rows is larger than the number of columns.
-
-:arg unsigned char *mem: An {rows} * {columns} matrix. The actual matrix is
-  assumed to start at the first 16-byte aligned byte.
-:arg unsigned int rows: Number of rows in the matrix.
-:arg unsigned int columns: Number of columns in the matrix. MUST NOT be less
-  than rows.
-
-:returns alignment: The minimum distance and its row number.
-:rtype: alignment
-*/
+/**
+ * find the minimum distance, ignoring a trailing gap in the sequence
+ * associated with the number of rows in an alignment matrix. if the minimum
+ * distance is found, also return the row number.
+ *
+ * it is assumed that the number of rows is larger than the number of columns.
+ *
+ * @arg {unsigned char *} mem - an {rows} * {columns} matrix. the actual matrix
+ *   is assumed to start at the first 16-byte aligned byte.
+ * @arg {unsigned int} rows - number of rows in the matrix.
+ * @arg {unsigned int} columns - number of columns in the matrix. must not be
+ *   less than rows.
+ *
+ * @return {alignment} - the minimum distance and its row number.
+ */
 alignment _find_min(
     unsigned char *mem, unsigned int rows, unsigned int columns) {
-  unsigned int width = ((rows+14) & ~0x0F) + 16,
+  unsigned int width = ((rows+14) & ~0x0f) + 16,
                i;
   unsigned char *matrix = (unsigned char*)(((unsigned long int)mem + 15) &
-                  ~(unsigned long int)0x0F),
+                  ~(unsigned long int)0x0f),
                 *cell;
   alignment a;
 
@@ -216,47 +215,50 @@ alignment _find_min(
     }
 
   return a;
-}//_find_min
+}
 
-/*
-Do a semi-global alignment of {seq2} to {seq1}.
-
-:arg char *seq1: The sequence to be aligned to.
-:arg char *seq2: The sequence to be aligned.
-:arg unsigned char indel_score: Penalty score for insertions and deletions (max
-  255).
-
-:returns alignment: The minimum distance and its row number.
-*/
-alignment align(char *seq1, char *seq2, char indel_score) {
+/**
+ * do a semi-global alignment of {seq2} to {seq1}.
+ *
+ * @arg {char *seq1} - the sequence to be aligned to.
+ * @arg {char *seq2} - the sequence to be aligned.
+ * @arg {unsigned char} indel_score - penalty score for insertions and
+ *   deletions (max 255).
+ *
+ * @return {alignment} - the minimum distance and its row number.
+ */
+alignment align(char *seq1, char *seq2, unsigned char indel_score) {
   alignment a;
   unsigned char *matrix;
   unsigned int rows = strlen(seq1) + 1,
                columns = strlen(seq2) + 1;
 
-  // The alignment is optimised for tall matrices.
+  // the alignment is optimised for tall matrices.
   matrix = _make_matrix(columns, rows, indel_score);
   _align(matrix, columns, rows, seq2, seq1, indel_score);
   a = _find_min(matrix, columns, rows);
   free(matrix);
   return a;
-}//align
+}
 
 
 #else
-/******************************************************************************
-  Plain Implementation
-******************************************************************************/
-
 /*
-Initialise a matrix for semi-global alignment.
+ * Vanilla implementation.
+ */
 
-:arg char *matrix: The alignment matrix.
-:arg int rows: Number of rows in the matrix.
-:arg int columns: Number of columns in the matrix.
-:arg char indel_score: Penalty score for insertions and deletions.
-*/
-void _init_matrix(char *matrix, int rows, int columns, char indel_score) {
+
+/**
+ * Initialise a matrix for semi-global alignment.
+ *
+ * @arg {char *} matrix - The alignment matrix.
+ * @arg {int} rows - Number of rows in the matrix.
+ * @arg {int} columns - Number of columns in the matrix.
+ * @arg {unsigned char} indel_score - Penalty score for insertions and
+ *   deletions.
+ */
+void _init_matrix(
+    char *matrix, int rows, int columns, unsigned char indel_score) {
   int i;
 
   for (i = 1; i < rows; i++)
@@ -264,21 +266,22 @@ void _init_matrix(char *matrix, int rows, int columns, char indel_score) {
 
   for (i = 0; i < columns; i++)
     *(matrix + i) = i * indel_score;
-}//_init_matrix
+}
 
-/*
-Fill the alignment matrix.
-
-:arg char *matrix: The alignment matrix.
-:arg int rows: Number of rows in the matrix.
-:arg int columns: Number of columns in the matrix.
-:arg char *seq1: The sequence to be aligned to.
-:arg char *seq2: The sequence to be aligned.
-:arg char indel_score: Penalty score for insertions and deletions.
-*/
+/**
+ * Fill the alignment matrix.
+ *
+ * @arg {char *} matrix - The alignment matrix.
+ * @arg {int} rows - Number of rows in the matrix.
+ * @arg {int} columns - Number of columns in the matrix.
+ * @arg {char *} seq1 - The sequence to be aligned to.
+ * @arg {char *} seq2 - The sequence to be aligned.
+ * @arg {unsigned char} indel_score - Penalty score for insertions and
+ *   deletions.
+ */
 void _align(
     char *matrix, int rows, int columns, char *seq1, char *seq2,
-    char indel_score) {
+    unsigned char indel_score) {
   int r,
       c;
 
@@ -289,18 +292,18 @@ void _align(
           *(matrix + (r-1)*columns + c),
           *(matrix + r*columns + c-1)) + indel_score,
         *(matrix + (r-1)*columns + c-1) + (seq1[r - 1] != seq2[c - 1]));
-}//_align
+}
 
-/*
-Find the minimum distance, ignoring a trailing gap in the sequence associated
-with the number of rows in an alignment matrix. If the minimum distance is
-found, also return the row number.
-
-:arg char *matrix: An {rows} * {columns} matrix.
-:arg int rows: Number of rows in the matrix.
-:arg int columns: Number of columns in the matrix.
-
-:returns alignment: The minimum distance and its row number.
+/**
+ * Find the minimum distance, ignoring a trailing gap in the sequence
+ * associated with the number of rows in an alignment matrix. If the minimum
+ * distance is found, also return the row number.
+ *
+ * @arg {char *} matrix - An {rows} * {columns} matrix.
+ * @arg {int} rows - Number of rows in the matrix.
+ * @arg {int} columns - Number of columns in the matrix.
+ *
+ * @return {alignment} - The minimum distance and its row number.
 */
 alignment _find_min(char *matrix, int rows, int columns) {
   alignment a;
@@ -315,18 +318,19 @@ alignment _find_min(char *matrix, int rows, int columns) {
     }
 
   return a;
-}//_find_min
+}
 
-/*
-Do a semi-global alignment of {seq2} to {seq1}.
-
-:arg char *seq1: The sequence to be aligned to.
-:arg char *seq2: The sequence to be aligned.
-:arg char indel_score: Penalty score for insertions and deletions.
-
-:returns alignment: The minimum distance and its row number.
-*/
-alignment align(char *seq1, char *seq2, char indel_score) {
+/**
+ * Do a semi-global alignment of {seq2} to {seq1}.
+ *
+ * @arg {char *} seq1 - The sequence to be aligned to.
+ * @arg {char *} seq2 - The sequence to be aligned.
+ * @arg {unsigned char} indel_score - Penalty score for insertions and
+ *   deletions.
+ *
+ * @return {alignment} - The minimum distance and its row number.
+ */
+alignment align(char *seq1, char *seq2, unsigned char indel_score) {
   alignment a;
   int rows = strlen(seq1) + 1,
              columns = strlen(seq2) + 1;
@@ -338,6 +342,6 @@ alignment align(char *seq1, char *seq2, char indel_score) {
   free(matrix);
 
   return a;
-}//align
+}
 
 #endif
