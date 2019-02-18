@@ -48,11 +48,11 @@ inline char _min(char a, char b) {
  */
 unsigned char *_make_matrix(
     unsigned int rows, unsigned int columns, unsigned char indel_score) {
-  unsigned int width = ((rows+14) & ~0x0F) + 16,
+  unsigned int width = ((rows + 14) & ~0x0F) + 16,
                height = columns + rows - 1;
   unsigned char *mem = malloc(width * height + 16),
-                *matrix = (unsigned char*)(((unsigned long int)mem + 15) &
-                  ~(unsigned long int)0x0F),
+                *matrix = (unsigned char *)(
+                  ((unsigned long int)mem + 15) & ~(unsigned long int)0x0F),
                 *cell,
                 score;
   unsigned int i,
@@ -106,11 +106,11 @@ void _align(
     char *seq1, char *seq2, unsigned char indel_score) {
   unsigned int x = 1,
                y = 1,
-               width = ((rows+14) & ~0x0F) + 16,
+               width = ((rows + 14) & ~0x0F) + 16,
                end = columns + _min(15, rows - 1),
                limit;
-  unsigned char *matrix = (unsigned char*)(((unsigned long int)mem + 15) &
-                  ~(unsigned long int)0x0F),
+  unsigned char *matrix = (unsigned char *)(
+                  ((unsigned long int)mem + 15) & ~(unsigned long int)0x0F),
                 *d = matrix,
                 *l = matrix + width,
                 *i = l + width + 1;
@@ -119,9 +119,9 @@ void _align(
     indel_scores = _mm_set1_epi8(indel_score),
     range = _mm_set_epi8(15, 14, 13, 12, 11, 10, 9, 8, 7 ,6, 5, 4, 3, 2, 1, 0);
   __m128i mi,
-          md = _mm_load_si128((__m128i*)d),
-          ml = _mm_load_si128((__m128i*)l),
-          mu = _mm_loadu_si128((__m128i*)(l + 1)),
+          md = _mm_load_si128((__m128i *)d),
+          ml = _mm_load_si128((__m128i *)l),
+          mu = _mm_loadu_si128((__m128i *)(l + 1)),
           mx,
           my;
 
@@ -132,8 +132,8 @@ void _align(
        *seq2r = malloc(seq2len + 16);
   strcpy(seq1f, seq1);
   _revseq(seq2, seq2r, seq2len);
-  mx = _mm_loadu_si128((__m128i*)seq1f);
-  my = _mm_loadu_si128((__m128i*)(seq2r + seq2len - 1));
+  mx = _mm_loadu_si128((__m128i *)seq1f);
+  my = _mm_loadu_si128((__m128i *)(seq2r + seq2len - 1));
 
   while (1) {
     mi = _mm_min_epu8(_mm_adds_epu8(_mm_min_epu8(ml, mu), indel_scores),
@@ -141,12 +141,12 @@ void _align(
 
     limit = y - x + 1;
     if (limit >= 16 || y >= (rows - 1))
-      _mm_storeu_si128((__m128i*)i, mi);
+      _mm_storeu_si128((__m128i *)i, mi);
     else
       // Need to make sure the top row and left column stay valid.
       // This is VERY MUCH SLOWER than the above.
       _mm_maskmoveu_si128(mi, _mm_cmplt_epi8(
-        range, _mm_set1_epi8(limit)), (char*)i);
+        range, _mm_set1_epi8(limit)), (char *)i);
 
     if (++y < end) {
       // Move down one row.
@@ -154,12 +154,12 @@ void _align(
       i += width;
       md = ml;
       mu = mi;
-      ml = _mm_load_si128((__m128i*)l);
+      ml = _mm_load_si128((__m128i *)l);
 
       // Move to the next base in seq2r.
       my = _mm_slli_si128(my, 1);
       if (limit - 1 < columns)
-        my = _mm_insert_epi16(my, *(short*)(seq2r + seq2len - limit - 1), 0);
+        my = _mm_insert_epi16(my, *(short *)(seq2r + seq2len - limit - 1), 0);
     }
     else if ((x += 16) < rows) {
       // Move right 16 columns.
@@ -168,11 +168,11 @@ void _align(
       d += 16 * width + 16;
       l = d + width;
       i = l + width + 1;
-      md = _mm_load_si128((__m128i*)d);
-      ml = _mm_load_si128((__m128i*)l);
-      mu = _mm_loadu_si128((__m128i*)(l + 1));
-      mx = _mm_loadu_si128((__m128i*)(seq1f + x - 1));
-      my = _mm_loadu_si128((__m128i*)(seq2r + seq2len - 1));
+      md = _mm_load_si128((__m128i *)d);
+      ml = _mm_load_si128((__m128i *)l);
+      mu = _mm_loadu_si128((__m128i *)(l + 1));
+      mx = _mm_loadu_si128((__m128i *)(seq1f + x - 1));
+      my = _mm_loadu_si128((__m128i *)(seq2r + seq2len - 1));
     }
     else break;
   }
@@ -198,10 +198,10 @@ void _align(
  */
 alignment _find_min(
     unsigned char *mem, unsigned int rows, unsigned int columns) {
-  unsigned int width = ((rows+14) & ~0x0f) + 16,
+  unsigned int width = ((rows + 14) & ~0x0f) + 16,
                i;
-  unsigned char *matrix = (unsigned char*)(((unsigned long int)mem + 15) &
-                  ~(unsigned long int)0x0f),
+  unsigned char *matrix = (unsigned char *)(
+                  ((unsigned long int)mem + 15) & ~(unsigned long int)0x0f),
                 *cell;
   alignment a;
 
@@ -262,7 +262,7 @@ void _init_matrix(
   int i;
 
   for (i = 1; i < rows; i++)
-    *(matrix + i*columns) = 0;
+    *(matrix + i * columns) = 0;
 
   for (i = 0; i < columns; i++)
     *(matrix + i) = i * indel_score;
@@ -287,11 +287,11 @@ void _align(
 
   for (r = 1; r < rows; r++)
     for (c = 1; c < columns; c++)
-      *(matrix + r*columns + c) = _min(
+      *(matrix + r * columns + c) = _min(
         _min(
-          *(matrix + (r-1)*columns + c),
-          *(matrix + r*columns + c-1)) + indel_score,
-        *(matrix + (r-1)*columns + c-1) + (seq1[r - 1] != seq2[c - 1]));
+          *(matrix + (r - 1) * columns + c),
+          *(matrix + r * columns + c - 1)) + indel_score,
+        *(matrix + (r - 1) * columns + c - 1) + (seq1[r - 1] != seq2[c - 1]));
 }
 
 /**
@@ -304,7 +304,7 @@ void _align(
  * @arg {int} columns - Number of columns in the matrix.
  *
  * @return {alignment} - The minimum distance and its row number.
-*/
+ */
 alignment _find_min(char *matrix, int rows, int columns) {
   alignment a;
   int r;
@@ -312,8 +312,8 @@ alignment _find_min(char *matrix, int rows, int columns) {
   a.distance = columns - 1;
   a.position = 0;
   for (r = 1; r < rows; r++)
-    if (*(matrix + r*columns + columns-1) < a.distance) {
-      a.distance = *(matrix + r*columns + columns-1);
+    if (*(matrix + r * columns + columns - 1) < a.distance) {
+      a.distance = *(matrix + r * columns + columns - 1);
       a.position = r;
     }
 
