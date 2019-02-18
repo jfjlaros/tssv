@@ -1,7 +1,7 @@
 """Tests for the alignment modules."""
 from Bio import Seq
 
-from tssv import align_pair, sg_align
+from tssv import align_pair
 
 
 class TestAlign(object):

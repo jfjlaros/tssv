@@ -1,4 +1,4 @@
-from . import sg_align
+from . import sg_align_i
 
 
 def align_pair(reference, reference_rc, pair, indel_score=1):
@@ -14,9 +14,10 @@ def align_pair(reference, reference_rc, pair, indel_score=1):
 
     :returns tuple: A tuple (score, position) of the best alignment.
     """
-    right_alignment = sg_align.align(reference_rc, pair[1], indel_score)
-    left_alignment = sg_align.align(reference, pair[0], indel_score)
+    right_alignment = sg_align_i.align_i(reference_rc, pair[1], indel_score)
+    left_alignment = sg_align_i.align_i(reference, pair[0], indel_score)
 
+    #raise ValueError(str(left_alignment))
     return (
-        (left_alignment.distance, left_alignment.position),
-        (right_alignment.distance, len(reference) - right_alignment.position))
+        (left_alignment['distance'], left_alignment['position']),
+        (right_alignment['distance'], len(reference) - right_alignment['position']))
