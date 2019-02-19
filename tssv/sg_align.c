@@ -50,7 +50,7 @@ unsigned char *_make_matrix(
     unsigned int rows, unsigned int columns, unsigned char indel_score) {
   unsigned int width = ((rows + 14) & ~0x0F) + 16,
                height = columns + rows - 1;
-  unsigned char *mem = malloc(width * height + 16),
+  unsigned char *mem = (unsigned char *)malloc(width * height + 16),
                 *matrix = (unsigned char *)(
                   ((unsigned long int)mem + 15) & ~(unsigned long int)0x0F),
                 *cell,
@@ -128,8 +128,8 @@ void _align(
   // Get copy of seq1 and reverse of seq2, making sure
   // that we can read 16 bytes (of garbage) past the end.
   const size_t seq2len = strlen(seq2);
-  char *seq1f = malloc(strlen(seq1) + 16),
-       *seq2r = malloc(seq2len + 16);
+  char *seq1f = (char *)malloc(strlen(seq1) + 16),
+       *seq2r = (char *)malloc(seq2len + 16);
   strcpy(seq1f, seq1);
   _revseq(seq2, seq2r, seq2len);
   mx = _mm_loadu_si128((__m128i *)seq1f);
@@ -334,7 +334,7 @@ alignment align(char *seq1, char *seq2, unsigned char indel_score) {
   alignment a;
   int rows = strlen(seq1) + 1,
              columns = strlen(seq2) + 1;
-  char *matrix = malloc(rows * columns * sizeof(char));
+  char *matrix = (char *)malloc(rows * columns * sizeof(char));
 
   _init_matrix(matrix, rows, columns, indel_score);
   _align(matrix, rows, columns, seq1, seq2, indel_score);
