@@ -5,8 +5,11 @@
 int main(void) {
   char read[] = "GCCAACTGTTTCCAAGGTCCCTCCCATGCATGCTGCTCTCTACAGAGGCATGTGCACAGT",
        anchor[] = "AGGTCGCTCC";
+  int i;
 
-  align(read, anchor);
+  for (i = 0; i < 10; i++) {
+    align(read, anchor, 1);
+  }
 
   return 0;
 }//main

@@ -259,13 +259,16 @@ alignment align(char *seq1, char *seq2, unsigned char indel_score) {
  */
 void _init_matrix(
     char *matrix, int rows, int columns, unsigned char indel_score) {
+  char (*_matrix)[columns] = (char (*)[columns])matrix;
   int i;
 
   for (i = 1; i < rows; i++)
-    *(matrix + i * columns) = 0;
+    //*(matrix + i * columns) = 0;
+    _matrix[i][0] = 0;
 
   for (i = 0; i < columns; i++)
-    *(matrix + i) = i * indel_score;
+    //*(matrix + i) = i * indel_score;
+    _matrix[0][i] = i * indel_score;
 }
 
 /**
@@ -282,16 +285,20 @@ void _init_matrix(
 void _align(
     char *matrix, int rows, int columns, char *seq1, char *seq2,
     unsigned char indel_score) {
+  char (*_matrix)[columns] = (char (*)[columns])matrix;
   int r,
       c;
 
   for (r = 1; r < rows; r++)
     for (c = 1; c < columns; c++)
-      *(matrix + r * columns + c) = _min(
-        _min(
-          *(matrix + (r - 1) * columns + c),
-          *(matrix + r * columns + c - 1)) + indel_score,
-        *(matrix + (r - 1) * columns + c - 1) + (seq1[r - 1] != seq2[c - 1]));
+      _matrix[r][c] = _min(
+        _min(_matrix[r - 1][c], _matrix[r][c - 1]) + indel_score,
+        _matrix[r - 1][c - 1] + (seq1[r - 1] != seq2[c - 1]));
+      //*(matrix + r * columns + c) = _min(
+      //  _min(
+      //    *(matrix + (r - 1) * columns + c),
+      //    *(matrix + r * columns + c - 1)) + indel_score,
+      //  *(matrix + (r - 1) * columns + c - 1) + (seq1[r - 1] != seq2[c - 1]));
 }
 
 /**
@@ -306,14 +313,17 @@ void _align(
  * @return {alignment} - The minimum distance and its row number.
  */
 alignment _find_min(char *matrix, int rows, int columns) {
+  char (*_matrix)[columns] = (char (*)[columns])matrix;
   alignment a;
   int r;
 
   a.distance = columns - 1;
   a.position = 0;
   for (r = 1; r < rows; r++)
-    if (*(matrix + r * columns + columns - 1) < a.distance) {
-      a.distance = *(matrix + r * columns + columns - 1);
+    //if (*(matrix + r * columns + columns - 1) < a.distance) {
+    //  a.distance = *(matrix + r * columns + columns - 1);
+    if (_matrix[r][columns - 1] < a.distance) {
+      a.distance = _matrix[r][columns - 1];
       a.position = r;
     }
 
