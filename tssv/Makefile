@@ -1,48 +1,40 @@
-SWIG := swig
+EXEC := d
+MAIN := debug
+TESTS :=
+LIBS := sg_align
+FIXTURES :=
 
-CC := gcc
-CFLAGS := -O3 -fPIC -I/usr/include/python2.7
-DFLAGS := -Wall -ggdb
 
-LD  := ld
-LFLAGS := -shared
+CC := g++
+INCLUDE :=
+CC_ARGS := -O3
+V_ARGS := -U __SSE2__
 
-INPUT_FILES := sg_align.c
-PRECIOUS := .py
-TEMPORARY := _wrap.c .o _wrap.o
 
-INPUT := $(basename $(INPUT_FILES))
-TEMPORARY_FILES := $(foreach I, $(TEMPORARY), $(addsuffix $I, $(INPUT)))
-PRECIOUS_FILES := $(foreach I, $(PRECIOUS), $(addsuffix $I, $(INPUT)))
-OUTPUT_FILES := _$(INPUT).so
+OBJS := $(addsuffix .o, $(TESTS) $(FIXTURES) $(LIBS))
+V_OBJS := $(addsuffix _v.o, $(TESTS) $(FIXTURES) $(LIBS))
 
-.SUFFIXES:
-.PHONY: all clean distclean
-.PRECIOUS: $(PRECIOUS_FILES)
+.PHONY: clean distclean
 
-all: $(OUTPUT_FILES)
+
+all: $(EXEC) $(EXEC)_v
+
+$(EXEC): $(MAIN).c $(OBJS)
+	$(CC) $(CC_ARGS) $(INCLUDE) -o $@ $^
+
+$(EXEC)_v: $(MAIN).c $(V_OBJS)
+	$(CC) $(V_ARGS) $(CC_ARGS) $(INCLUDE) -o $@ $^
+
+%.o: %.cc
+%.o: %.c
+	$(CC) $(CC_ARGS) $(INCLUDE) -o $@ -c $<
+
+%_v.o: %.cc
+%_v.o: %.c
+	$(CC) $(V_ARGS) $(CC_ARGS) $(INCLUDE) -o $@ -c $<
 
 clean:
-	rm -f $(TEMPORARY_FILES)
+	rm -f $(OBJS) $(V_OBJS)
 
 distclean: clean
-	rm -f $(PRECIOUS_FILES) $(OUTPUT_FILES)
-
-%_wrap.c %.py: %.i
-	$(SWIG) -python $<
-%.py: %.i
-	@
-
-%.o: %.c %_wrap.c
-	$(CC) $(CFLAGS) -c $^
-%_wrap.o: %.c %_wrap.c
-	@
-
-_%.so: %.o %_wrap.o
-	$(LD) $(LFLAGS) $^ -o $@
-
-sg_align.o: sg_align.c sg_align.h
-	$(CC) $(DFLAGS) -c $^
-
-debug: debug.c sg_align.o
-	$(CC) $(DFLAGS) -o $@ $^
+	rm -f $(EXEC) v$(EXEC)

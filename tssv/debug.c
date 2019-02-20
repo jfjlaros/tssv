@@ -7,7 +7,7 @@ int main(void) {
        anchor[] = "AGGTCGCTCC";
   int i;
 
-  for (i = 0; i < 10; i++) {
+  for (i = 0; i < 10000000; i++) {
     align(read, anchor, 1);
   }
 
