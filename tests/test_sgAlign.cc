@@ -1,7 +1,7 @@
 #define CATCH_CONFIG_MAIN
 #include <catch.hpp>
 
-#include "../tssv/sg_align.h"
+#include "../tssv/sgAlign.h"
 
 
 TEST_CASE("Test", "[matrix]") {

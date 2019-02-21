@@ -26,7 +26,7 @@ inline char _min(char a, char b) {
 }
 
 
-#ifdef __DISABLED__ //defined(_MSC_VER) || defined(__SSE2__)
+#if defined(_MSC_VER) || defined(__SSE2__)
 /*
  * SSE2 implementation.
  */

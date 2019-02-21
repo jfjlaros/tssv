@@ -1,7 +1,7 @@
 EXEC := d
 MAIN := debug
 TESTS :=
-LIBS := sg_align
+LIBS := sgAlign
 FIXTURES :=
 
 
@@ -37,4 +37,4 @@ clean:
 	rm -f $(OBJS) $(V_OBJS)
 
 distclean: clean
-	rm -f $(EXEC) v$(EXEC)
+	rm -f $(EXEC) $(EXEC)_v

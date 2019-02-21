@@ -1,7 +1,7 @@
 EXEC := run_tests
-MAIN := test_sg_align
+MAIN := test_sgAlign
 TESTS :=
-LIBS := ../tssv/sg_align
+LIBS := ../tssv/sgAlign
 FIXTURES :=
 
 
