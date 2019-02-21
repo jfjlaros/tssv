@@ -1,6 +1,7 @@
 #include <stdio.h>
 
-#include "sg_align.h"
+#include "sgAlign.h"
+
 
 int main(void) {
   char read[] = "GCCAACTGTTTCCAAGGTCCCTCCCATGCATGCTGCTCTCTACAGAGGCATGTGCACAGT",
@@ -12,4 +13,4 @@ int main(void) {
   }
 
   return 0;
-}//main
+}

@@ -8,7 +8,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "sg_align.h"
+#include "sgAlign.h"
 
 
 /**
@@ -26,7 +26,7 @@ inline char _min(char a, char b) {
 }
 
 
-#if defined(_MSC_VER) || defined(__SSE2__)
+#ifdef __DISABLED__ //defined(_MSC_VER) || defined(__SSE2__)
 /*
  * SSE2 implementation.
  */
@@ -254,11 +254,11 @@ alignment align(char *seq1, char *seq2, unsigned char indel_score) {
  * @arg {char *} matrix - The alignment matrix.
  * @arg {int} rows - Number of rows in the matrix.
  * @arg {int} columns - Number of columns in the matrix.
- * @arg {unsigned char} indel_score - Penalty score for insertions and
+ * @arg {unsigned char} indelScore - Penalty score for insertions and
  *   deletions.
  */
-void _init_matrix(
-    char *matrix, int rows, int columns, unsigned char indel_score) {
+void _initMatrix(
+    char *matrix, int rows, int columns, unsigned char indelScore) {
   char (*_matrix)[columns] = (char (*)[columns])matrix;
   int i;
 
@@ -266,7 +266,7 @@ void _init_matrix(
     _matrix[i][0] = 0;
 
   for (i = 0; i < columns; i++)
-    _matrix[0][i] = i * indel_score;
+    _matrix[0][i] = i * indelScore;
 }
 
 /**
@@ -277,12 +277,12 @@ void _init_matrix(
  * @arg {int} columns - Number of columns in the matrix.
  * @arg {char *} seq1 - The sequence to be aligned to.
  * @arg {char *} seq2 - The sequence to be aligned.
- * @arg {unsigned char} indel_score - Penalty score for insertions and
+ * @arg {unsigned char} indelScore - Penalty score for insertions and
  *   deletions.
  */
 void _align(
     char *matrix, int rows, int columns, char *seq1, char *seq2,
-    unsigned char indel_score) {
+    unsigned char indelScore) {
   char (*_matrix)[columns] = (char (*)[columns])matrix;
   int r,
       c;
@@ -290,7 +290,7 @@ void _align(
   for (r = 1; r < rows; r++)
     for (c = 1; c < columns; c++)
       _matrix[r][c] = _min(
-        _min(_matrix[r - 1][c], _matrix[r][c - 1]) + indel_score,
+        _min(_matrix[r - 1][c], _matrix[r][c - 1]) + indelScore,
         _matrix[r - 1][c - 1] + (seq1[r - 1] != seq2[c - 1]));
 }
 
@@ -305,7 +305,7 @@ void _align(
  *
  * @return {alignment} - The minimum distance and its row number.
  */
-alignment _find_min(char *matrix, int rows, int columns) {
+alignment _findMin(char *matrix, int rows, int columns) {
   char (*_matrix)[columns] = (char (*)[columns])matrix;
   alignment a;
   int r;
@@ -326,20 +326,20 @@ alignment _find_min(char *matrix, int rows, int columns) {
  *
  * @arg {char *} seq1 - The sequence to be aligned to.
  * @arg {char *} seq2 - The sequence to be aligned.
- * @arg {unsigned char} indel_score - Penalty score for insertions and
+ * @arg {unsigned char} indelScore - Penalty score for insertions and
  *   deletions.
  *
  * @return {alignment} - The minimum distance and its row number.
  */
-alignment align(char *seq1, char *seq2, unsigned char indel_score) {
+alignment align(char *seq1, char *seq2, unsigned char indelScore) {
   alignment a;
   int rows = strlen(seq1) + 1,
       columns = strlen(seq2) + 1;
   char *matrix = (char *)malloc(rows * columns * sizeof(char));
 
-  _init_matrix(matrix, rows, columns, indel_score);
-  _align(matrix, rows, columns, seq1, seq2, indel_score);
-  a = _find_min(matrix, rows, columns);
+  _initMatrix(matrix, rows, columns, indelScore);
+  _align(matrix, rows, columns, seq1, seq2, indelScore);
+  a = _findMin(matrix, rows, columns);
   free(matrix);
 
   return a;
