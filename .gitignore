@@ -4,9 +4,9 @@
 .tox
 build/
 dist/
+tests/run_tests
+tests/run_tests_v
 tssv.egg-info/
-tssv/debug
-tssv/sg_align.h.gch
-tssv/sg_align.o
-tssv/sg_align.py
-tssv/sg_align_wrap.c
+tssv/*.o
+tssv/d
+tssv/d_v
