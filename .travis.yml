@@ -5,6 +5,7 @@ python:
     - 3.6
 install:
     - pip install . fake-open tox-travis
+    - sudo apt update
     - sudo apt install catch
 script:
   - tox
