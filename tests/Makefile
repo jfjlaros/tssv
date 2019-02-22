@@ -14,7 +14,7 @@ V_ARGS := -U __SSE2__
 OBJS := $(addsuffix .o, $(TESTS) $(FIXTURES) $(LIBS))
 V_OBJS := $(addsuffix _v.o, $(TESTS) $(FIXTURES) $(LIBS))
 
-.PHONY: clean distclean
+.PHONY: all clean distclean
 
 
 all: $(EXEC) $(EXEC)_v
@@ -33,7 +33,7 @@ $(EXEC)_v: $(MAIN).cc $(V_OBJS)
 %_v.o: %.c
 	$(CC) $(V_ARGS) $(CC_ARGS) $(INCLUDE) -o $@ -c $<
 
-check:
+check: all
 	./$(EXEC); ./$(EXEC)_v
 
 clean:
