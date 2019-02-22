@@ -10,5 +10,5 @@ TEST_CASE("Test", "[matrix]") {
       (char *)"CTGTTTCCAAGG",
       1);
 
-  REQUIRE(a.distance == 3);
+  REQUIRE(a.distance == 1);
 }

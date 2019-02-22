@@ -4,12 +4,12 @@ python:
     - 3.5
     - 3.6
 install:
-    - pip install . fake-open tox-travis
     - sudo apt update
     - sudo apt install catch
+    - pip install . fake-open tox-travis
 script:
-  - tox
   - cd tests
   - make
   - ./run_tests
   - ./run_tests_v
+  - tox
