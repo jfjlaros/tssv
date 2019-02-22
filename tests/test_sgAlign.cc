@@ -5,15 +5,10 @@
 
 
 TEST_CASE("Test", "[matrix]") {
-  alignment a;
-  int i;
-
-  for (i = 0; i < 10000000; i++) {
-    a = align(
+  alignment a = align(
       (char *)"GCCAACTGTTACCAAGGTCCCTCCCATGCATGCTGCTCCCTACAGAGGCATGTGCACAGT",
       (char *)"CTGTTTCCAAGG",
       1);
-  }
 
   REQUIRE(a.distance == 3);
 }

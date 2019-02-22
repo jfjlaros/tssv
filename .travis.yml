@@ -5,4 +5,10 @@ python:
     - 3.6
 install:
     - pip install . fake-open tox-travis
-script: tox
+    - apt install catch
+script:
+  - tox
+  - cd tests
+  - make
+  - ./test_lib
+  - ./test_lib_v
