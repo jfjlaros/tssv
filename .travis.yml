@@ -5,7 +5,7 @@ python:
     - 3.6
 install:
     - pip install . fake-open tox-travis
-    - apt install catch
+    - sudo apt install catch
 script:
   - tox
   - cd tests
