@@ -11,5 +11,5 @@ script:
   - tox
   - cd tests
   - make
-  - ./test_lib
-  - ./test_lib_v
+  - ./run_tests
+  - ./run_tests_v
