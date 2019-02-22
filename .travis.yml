@@ -6,10 +6,8 @@ python:
 install:
     - sudo apt update
     - sudo apt install catch
-    - pip install . fake-open tox-travis
+    - pip install fake-open tox-travis
 script:
   - cd tests
-  - make
-  - ./run_tests
-  - ./run_tests_v
+  - make check
   - tox

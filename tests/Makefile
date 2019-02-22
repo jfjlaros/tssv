@@ -33,8 +33,11 @@ $(EXEC)_v: $(MAIN).cc $(V_OBJS)
 %_v.o: %.c
 	$(CC) $(V_ARGS) $(CC_ARGS) $(INCLUDE) -o $@ -c $<
 
+check:
+	./$(EXEC); ./$(EXEC)_v
+
 clean:
 	rm -f $(OBJS) $(V_OBJS)
 
 distclean: clean
-	rm -f $(EXEC) v$(EXEC)
+	rm -f $(EXEC) $(EXEC)_v
