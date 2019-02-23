@@ -1,4 +1,4 @@
-from .sg_align import align
+from .sg_align import align, align_sse
 
 
 def align_pair(reference, reference_rc, pair, indel_score=1):
@@ -14,8 +14,12 @@ def align_pair(reference, reference_rc, pair, indel_score=1):
 
     :returns tuple: A tuple (score, position) of the best alignment.
     """
-    left = align(reference, pair[0], indel_score)
-    right = align(reference_rc, pair[1], indel_score)
+    if len(reference) < 150: # TODO: Make configurable.
+        left = align(reference, pair[0], indel_score)
+        right = align(reference_rc, pair[1], indel_score)
+    else:
+        left = align_sse(reference, pair[0], indel_score)
+        right = align_sse(reference_rc, pair[1], indel_score)
 
     return (
         (left['distance'], left['position']),

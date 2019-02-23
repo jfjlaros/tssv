@@ -1,14 +1,21 @@
 #include <Python.h>
 
 #include "sgAlign.h"
+#include "sgAlignSSE.h"
 
 
-static PyObject *pyAlignment(int distance, int position) {
+/**
+ * Converter for alignment struct.
+ */
+PyObject *pyAlignment(int distance, int position) {
   return Py_BuildValue(
     "{s: i, s: i}", "distance", distance, "position", position);
 }
 
-static PyObject *pyAlign(PyObject *self, PyObject *args) {
+/**
+ * Wrapper for align function.
+ */
+PyObject *pyAlign(PyObject *self, PyObject *args) {
   char *seq1,
        *seq2,
        indel_score;
@@ -23,14 +30,37 @@ static PyObject *pyAlign(PyObject *self, PyObject *args) {
   return pyAlignment(a.distance, a.position);
 }
 
-static PyMethodDef pySgAlignMethods[] = {
-  {
-    "align", pyAlign, METH_VARARGS,
-    "Bla"},
+/**
+ * Wrapper for alignSSE function.
+ */
+PyObject *pyAlignSSE(PyObject *self, PyObject *args) {
+  char *seq1,
+       *seq2,
+       indel_score;
+  alignment a;
+
+  if (!PyArg_ParseTuple(args, "ssb", &seq1, &seq2, &indel_score)) {
+    return NULL;
+  }
+
+  a = alignSSE(seq1, seq2, indel_score);
+
+  return pyAlignment(a.distance, a.position);
+}
+
+/*
+ * Module methods.
+ */
+PyMethodDef pySgAlignMethods[] = {
+  {"align", pyAlign, METH_VARARGS, "Bla"},
+  {"align_sse", pyAlignSSE, METH_VARARGS, "Bla"},
   {NULL, NULL, 0, NULL}
 };
 
-static struct PyModuleDef sgAlignModule = {
+/*
+ * Module definition.
+ */
+struct PyModuleDef sgAlignModule = {
   PyModuleDef_HEAD_INIT,
   "sg_align",
   "Bla.",
@@ -38,8 +68,9 @@ static struct PyModuleDef sgAlignModule = {
   pySgAlignMethods
 };
 
+/**
+ * Module init function.
+ */
 PyMODINIT_FUNC PyInit_sg_align(void) {
-  PyObject* module = PyModule_Create(&sgAlignModule);
-
-  return module;
+  return PyModule_Create(&sgAlignModule);
 }

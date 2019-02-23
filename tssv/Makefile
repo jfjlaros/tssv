@@ -1,40 +1,30 @@
 EXEC := d
 MAIN := debug
 TESTS :=
-LIBS := sgAlign
+LIBS := sgAlign sgAlignSSE
 FIXTURES :=
 
 
-CC := g++
+CC := gcc
 INCLUDE :=
 CC_ARGS := -O3
-V_ARGS := -U __SSE2__
 
 
 OBJS := $(addsuffix .o, $(TESTS) $(FIXTURES) $(LIBS))
-V_OBJS := $(addsuffix _v.o, $(TESTS) $(FIXTURES) $(LIBS))
 
 .PHONY: clean distclean
 
 
-all: $(EXEC) $(EXEC)_v
+all: $(EXEC)
 
 $(EXEC): $(MAIN).c $(OBJS)
 	$(CC) $(CC_ARGS) $(INCLUDE) -o $@ $^
 
-$(EXEC)_v: $(MAIN).c $(V_OBJS)
-	$(CC) $(V_ARGS) $(CC_ARGS) $(INCLUDE) -o $@ $^
-
-%.o: %.cc
 %.o: %.c
 	$(CC) $(CC_ARGS) $(INCLUDE) -o $@ -c $<
-
-%_v.o: %.cc
-%_v.o: %.c
-	$(CC) $(V_ARGS) $(CC_ARGS) $(INCLUDE) -o $@ -c $<
 
 clean:
 	rm -f $(OBJS) $(V_OBJS)
 
 distclean: clean
-	rm -f $(EXEC) $(EXEC)_v
+	rm -f $(EXEC)
