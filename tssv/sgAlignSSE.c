@@ -17,7 +17,7 @@
  *
  * @return {char} - The minimum of {a} and {b}.
  */
-inline char _min(char a, char b) {
+static inline char _min(char a, char b) {
   if (a < b)
     return a;
   return b;
