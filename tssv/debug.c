@@ -45,13 +45,14 @@ int main(void) {
   int i,
       j;
 
+  strcpy(_anchor, anchor);
   printf("ref\tanchor\tvanilla\tsse\tdiff\tfraq\n");
   for (i = 1000; i > 60; i -= 10) {
-    strcpy(_anchor, anchor);
+    strcpy(anchor, _anchor);
     ref[i] = '\0';
 
     for (j = 60; j; j -= 5) {
-      _anchor[j] = '\0';
+      anchor[j] = '\0';
 
       vanilla = benchmark(align);
       sse = benchmark(alignSSE);
