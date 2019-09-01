@@ -7,7 +7,7 @@ FIXTURES :=
 
 CC := g++
 INCLUDE :=
-CC_ARGS := -O3
+CC_ARGS := -O3 -std=c++11
 
 
 OBJS := $(addsuffix .o, $(TESTS) $(FIXTURES) $(LIBS))
