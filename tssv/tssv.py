@@ -1,14 +1,11 @@
-from argparse import ArgumentParser, FileType, RawDescriptionHelpFormatter
 from collections import defaultdict
 from functools import reduce
 from math import ceil
 from os import mkdir
 from re import compile as re_compile
-from sys import stdout
 
 from Bio import Seq, SeqIO
 
-from . import ProtectedFileType, doc_split, usage, version
 from .align_pair import align_pair
 
 
@@ -278,11 +275,12 @@ def write_files(tables, files):
             files[i]['newalleles'])
 
 
-def tssv(fasta_handle, library_handle, report_handle, path, threshold,
-        minimum, is_fastq, indel_score):
+def tssv(
+        input_handle, library_handle, report_handle, path, threshold, minimum,
+        is_fastq, indel_score, method_sse):
     """Do the short structural variation analysis.
 
-    :arg stream fasta_handle: Open readable handle to a FASTA file.
+    :arg stream input_handle: Open readable handle to a FASTA file.
     :arg stream library_handle: Open readable handle to a library file.
     :arg stream report_handle: Open writable handle to the report file.
     :arg str path: Name of the output folder.
@@ -291,6 +289,7 @@ def tssv(fasta_handle, library_handle, report_handle, path, threshold,
     :arg bool is_fastq: Read FASTQ file instead of FASTA.
     :arg int indel_score: Penalty score for insertions and deletions per
         nucleotide
+    :arg bool method_sse: Use SSE2 alignment implementation.
     """
     total = 0
     unrecognised = 0
@@ -299,7 +298,7 @@ def tssv(fasta_handle, library_handle, report_handle, path, threshold,
     if path:
         files = open_files(path, library)
 
-    for record in SeqIO.parse(fasta_handle, 'fastq' if is_fastq else 'fasta'):
+    for record in SeqIO.parse(input_handle, 'fastq' if is_fastq else 'fasta'):
         ref = [str(record.seq), Seq.reverse_complement(str(record.seq))]
         ref_up = list(map(str.upper, ref))
         total += 1
@@ -309,9 +308,11 @@ def tssv(fasta_handle, library_handle, report_handle, path, threshold,
             # Align against all-uppercase reference sequence.
             alignments = (
                 align_pair(
-                    ref_up[0], ref_up[1], library[i]['flanks'], indel_score),
+                    ref_up[0], ref_up[1], library[i]['flanks'], indel_score,
+                    method_sse),
                 align_pair(
-                    ref_up[1], ref_up[0], library[i]['flanks'], indel_score))
+                    ref_up[1], ref_up[0], library[i]['flanks'], indel_score,
+                    method_sse))
             matches = [False, False, False, False]
             classification = ''
 
@@ -385,47 +386,3 @@ def tssv(fasta_handle, library_handle, report_handle, path, threshold,
         write_files(tables, files)
 
     make_report(tables, report_handle)
-
-
-def main():
-    """Main entry point."""
-    parser = ArgumentParser(
-        description=usage[0], epilog=usage[1],
-        formatter_class=RawDescriptionHelpFormatter)
-
-    parser.add_argument(
-        'fasta', metavar='FASTA', type=FileType('r'), help='a FASTA file')
-    parser.add_argument(
-        'lib', metavar='LIBRARY', type=FileType('r'),
-        help='library of flanking sequences')
-    parser.add_argument(
-        '-q', dest='fastq', action='store_true',
-        help='if specified, treat input as FASTQ instead of FASTA')
-    parser.add_argument(
-        '-m', dest='mismatches', type=float, default=0.08,
-        help='mismatches per nucleotide (default=%(default)s)')
-    parser.add_argument(
-        '-n', '--indel-score', type=int, default=1,
-        help='insertions and deletions are penalised this number of times '
-             'more heavily than mismatches (default=%(default)s)')
-    parser.add_argument(
-        '-r', dest='report', type=FileType('w'), default=stdout,
-        help='name of the report file')
-    parser.add_argument('-d', dest='path', type=str, help='output directory')
-    parser.add_argument(
-        '-a', dest='minimum', type=int, default=0,
-        help='minimum count per allele (default=%(default)s)')
-    parser.add_argument('-v', action='version', version=version(parser.prog))
-
-    args = parser.parse_args()
-
-    try:
-        tssv(
-            args.fasta, args.lib, args.report, args.path, args.mismatches,
-            args.minimum, args.fastq, args.indel_score)
-    except OSError as error:
-        parser.error(error)
-
-
-if __name__ == '__main__':
-    main()

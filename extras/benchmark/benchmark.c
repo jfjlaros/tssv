@@ -2,8 +2,8 @@
 #include <string.h>
 #include <time.h>
 
-#include "sgAlign.h"
-#include "sgAlignSSE.h"
+#include "../../tssv/sgAlign.h"
+#include "../../tssv/sgAlignSSE.h"
 
 char anchor[] = "CTGTACTCCTGTGCTTAAGATCAAAATTATTTCTCAACGCCAAACATACGTTCTTAAACC",
      ref[] =

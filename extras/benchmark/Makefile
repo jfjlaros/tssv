@@ -1,7 +1,7 @@
-EXEC := d
-MAIN := debug
+EXEC := benchmark
+MAIN := benchmark
 TESTS :=
-LIBS := sgAlign sgAlignSSE
+LIBS := ../../tssv/sgAlign ../../tssv/sgAlignSSE
 FIXTURES :=
 
 

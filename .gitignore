@@ -4,9 +4,8 @@
 .tox
 build/
 dist/
+extras/benchmark/benchmark
+tests/*.o
 tests/run_tests
-tests/run_tests_v
 tssv.egg-info/
 tssv/*.o
-tssv/d
-tssv/d_v
