@@ -18,9 +18,6 @@ def main():
         'library_handle', metavar='LIBRARY', type=FileType('r'),
         help='library of flanking sequences')
     parser.add_argument(
-        '-q', dest='is_fastq', action='store_true',
-        help='if specified, treat input as FASTQ instead of FASTA')
-    parser.add_argument(
         '-m', dest='threshold', type=float, default=0.08,
         help='mismatches per nucleotide (default=%(default)s)')
     parser.add_argument(

@@ -5,12 +5,13 @@ from os import mkdir
 from re import compile as re_compile
 
 from Bio import Seq, SeqIO
+from fastools.utils import guess_file_format
 
 from .align_pair import align_pair
 
 
 file_names = {
-    'unknown': 'unknown.fa',
+    'unknown': 'unknown.seq',
     'markers': 'markers.csv',
     'known'  : 'knownalleles.csv',
     'new'    : 'newalleles.csv',
@@ -20,10 +21,10 @@ file_names = {
 """Names of the global report files."""
 
 marker_file_names = {
-    'known'       : 'known.fa',
-    'new'         : 'new.fa',
-    'noend'       : 'noend.fa',
-    'nostart'     : 'nostart.fa',
+    'known'       : 'known.seq',
+    'new'         : 'new.seq',
+    'noend'       : 'noend.seq',
+    'nostart'     : 'nostart.seq',
     'knownalleles': 'knownalleles.csv',
     'newalleles'  : 'newalleles.csv'}
 """Names of the marker specific report files."""
@@ -281,7 +282,7 @@ def write_files(tables, files):
 
 def tssv(
         input_handle, library_handle, report_handle, path, threshold,
-        mismatches, minimum, is_fastq, indel_score, method_sse):
+        mismatches, minimum, indel_score, method_sse):
     """Do the short structural variation analysis.
 
     :arg stream input_handle: Open readable handle to a FASTA file.
@@ -291,7 +292,6 @@ def tssv(
     :arg float threshold: Number of allowed mismatches per nucleotide.
     :arg int mismatches: If set, overrides the dynamic threshold calculation.
     :arg int minimum: Minimum count per allele.
-    :arg bool is_fastq: Read FASTQ file instead of FASTA.
     :arg int indel_score: Penalty score for insertions and deletions per
         nucleotide
     :arg bool method_sse: Use SSE2 alignment implementation.
@@ -299,11 +299,12 @@ def tssv(
     total = 0
     unrecognised = 0
     library = parse_library(library_handle, threshold, mismatches)
+    file_format = guess_file_format(input_handle)
 
     if path:
         files = open_files(path, library)
 
-    for record in SeqIO.parse(input_handle, 'fastq' if is_fastq else 'fasta'):
+    for record in SeqIO.parse(input_handle, file_format):
         ref = [str(record.seq), Seq.reverse_complement(str(record.seq))]
         ref_up = list(map(str.upper, ref))
         total += 1
@@ -370,13 +371,14 @@ def tssv(
                 unknown = False
 
                 if path:
-                    SeqIO.write([record], files[i][classification], 'fasta')
+                    SeqIO.write(
+                        [record], files[i][classification], file_format)
 
         if unknown:
             unrecognised += 1
 
             if path:
-                SeqIO.write([record], files['unknown'], 'fasta')
+                SeqIO.write([record], files['unknown'], file_format)
 
     tables = make_tables(total, unrecognised, library, minimum)
 
