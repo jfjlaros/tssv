@@ -36,13 +36,14 @@ headers = {
 """Headers for various tables."""
 
 
-def parse_library(library_handle, threshold):
+def parse_library(library_handle, threshold, mismatches=0):
     """Parse the library file and put the data in a nested dictionary
     containing per marker the two forward flanking sequences, the two reverse
     flanking sequences and a regular expression pattern object.
 
     :arg stream library_handle: Open readable handle to a library file.
     :arg float threshold: Number of allowed mismatches per nucleotide.
+    :arg int mismatches: If set, overrides the dynamic threshold calculation.
 
     :returns dict: Nested dictionary containing library data.
     """
@@ -63,8 +64,8 @@ def parse_library(library_handle, threshold):
             'counts': [0, 0, 0, 0],
             'pair_match': [0, 0],
             'thresholds': [
-                int(ceil(len(i[1]) * threshold)),
-                int(ceil(len(i[2]) * threshold))],
+                mismatches or int(ceil(len(i[1]) * threshold)),
+                mismatches or int(ceil(len(i[2]) * threshold))],
             'reg_exp': re_compile(pattern),
             'new': defaultdict(lambda: [0, 0]),
             'known': defaultdict(lambda: [0, 0])}
@@ -279,8 +280,8 @@ def write_files(tables, files):
 
 
 def tssv(
-        input_handle, library_handle, report_handle, path, threshold, minimum,
-        is_fastq, indel_score, method_sse):
+        input_handle, library_handle, report_handle, path, threshold,
+        mismatches, minimum, is_fastq, indel_score, method_sse):
     """Do the short structural variation analysis.
 
     :arg stream input_handle: Open readable handle to a FASTA file.
@@ -288,6 +289,7 @@ def tssv(
     :arg stream report_handle: Open writable handle to the report file.
     :arg str path: Name of the output folder.
     :arg float threshold: Number of allowed mismatches per nucleotide.
+    :arg int mismatches: If set, overrides the dynamic threshold calculation.
     :arg int minimum: Minimum count per allele.
     :arg bool is_fastq: Read FASTQ file instead of FASTA.
     :arg int indel_score: Penalty score for insertions and deletions per
@@ -296,7 +298,7 @@ def tssv(
     """
     total = 0
     unrecognised = 0
-    library = parse_library(library_handle, threshold)
+    library = parse_library(library_handle, threshold, mismatches)
 
     if path:
         files = open_files(path, library)

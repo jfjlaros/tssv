@@ -24,6 +24,9 @@ def main():
         '-m', dest='threshold', type=float, default=0.08,
         help='mismatches per nucleotide (default=%(default)s)')
     parser.add_argument(
+        '-M', dest='mismatches', type=int,
+        help='fixed number of mismatches, overrides -m (default=%(default)s)')
+    parser.add_argument(
         '-n', dest='indel_score', type=int, default=1,
         help='insertions and deletions are penalised this number of times '
              'more heavily than mismatches (default=%(default)s)')
