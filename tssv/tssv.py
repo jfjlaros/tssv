@@ -50,10 +50,13 @@ def parse_library(library_handle, threshold):
     data = map(lambda x: x.strip().split('\t'), library_handle.readlines())
 
     for i in data:
-        pat = i[3].split()
-        pattern = '^{}$'.format(''.join(map(
-            lambda x: ('({}){{{},{}}}'.format(pat[x], pat[x + 1], pat[x + 2])),
-            range(0, len(pat), 3))))
+        pattern = '(?!x)x' # This will never match anything.
+        if len(i) == 4:
+            pat = i[3].split()
+            pattern = '^{}$'.format(''.join(map(
+                lambda x: ('({}){{{},{}}}'.format(
+                    pat[x], pat[x + 1], pat[x + 2])),
+                range(0, len(pat), 3))))
 
         library[i[0]] = {
             'flanks': [i[1], Seq.reverse_complement(i[2])],
