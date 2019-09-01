@@ -4,7 +4,7 @@ from io import StringIO
 
 from fake_open import md5_check
 
-from tssv import annotate
+from tssv_extras import annotate
 
 
 class TestAnnotation(object):
