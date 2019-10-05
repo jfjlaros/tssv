@@ -52,8 +52,16 @@ PyObject *pyAlignSSE(PyObject *self, PyObject *args) {
  * Module methods.
  */
 PyMethodDef pySgAlignMethods[] = {
-  {"align", pyAlign, METH_VARARGS, "Bla"},
-  {"align_sse", pyAlignSSE, METH_VARARGS, "Bla"},
+  {
+    "align", pyAlign, METH_VARARGS,
+    "Do a semi-global alignment of {seq2} to {seq1}.\n\n"
+    "  :arg str seq1: The sequence to be aligned to.\n"
+    "  :arg str seq2: The sequence to be aligned.\n"
+    "  :arg int indelScore: Penalty score for insertions and deletions.\n\n"
+    "  :returns dict alignment: The minimum distance and its row number.\n"},
+  {
+    "align_sse", pyAlignSSE, METH_VARARGS,
+    "SSE implementation of {align}."},
   {NULL, NULL, 0, NULL}
 };
 
@@ -63,7 +71,7 @@ PyMethodDef pySgAlignMethods[] = {
 struct PyModuleDef sgAlignModule = {
   PyModuleDef_HEAD_INIT,
   "sg_align",
-  "Bla.",
+  "Library for semi-global alignment.",
   -1,
   pySgAlignMethods
 };

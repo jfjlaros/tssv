@@ -3,6 +3,9 @@ from os.path import abspath, dirname, exists
 
 from configparser import ConfigParser
 
+from .align_pair import align_pair
+from .sg_align import align
+
 
 config = ConfigParser()
 with open('{}/setup.cfg'.format(dirname(abspath(__file__)))) as handle:
