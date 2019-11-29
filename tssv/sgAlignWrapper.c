@@ -17,11 +17,11 @@ PyObject *pyAlignment(int distance, int position) {
  */
 PyObject *pyAlign(PyObject *self, PyObject *args) {
   char *seq1,
-       *seq2,
-       indel_score;
+       *seq2;
+  int indel_score;
   alignment a;
 
-  if (!PyArg_ParseTuple(args, "ssb", &seq1, &seq2, &indel_score)) {
+  if (!PyArg_ParseTuple(args, "ssi", &seq1, &seq2, &indel_score)) {
     return NULL;
   }
 

@@ -5,19 +5,18 @@
 /*
  * Private function prototypes.
  */
-void _initMatrix(unsigned char *, unsigned int, unsigned int, unsigned char);
-void _align(
-  unsigned char *, unsigned int, unsigned int, char *, char *, unsigned char);
-alignment _findMin(unsigned char *, unsigned int, unsigned int);
+void _initMatrix(int *, int, int, int);
+void _align(int *, int, int, char *, char *, int);
+alignment _findMin(int *, int, int);
 
 
 TEST_CASE("Internal alignment function", "[matrix]") {
-  unsigned char *matrix = (unsigned char *)malloc(1000); //
+  int *matrix = (int *)malloc(1000); //
 }
 
 TEST_CASE("Initialise matrix", "[matrix]") {
-  unsigned char *matrix = (unsigned char *)malloc(100 * sizeof(unsigned char)),
-                (*_matrix)[10] = (unsigned char (*)[10])matrix;
+  int *matrix = (int *)malloc(100 * sizeof(int)),
+      (*_matrix)[10] = (int (*)[10])matrix;
 
   _initMatrix(matrix, 10, 10, 1);
   REQUIRE(_matrix[0][0] == 0);

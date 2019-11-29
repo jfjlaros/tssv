@@ -10,12 +10,12 @@
 /**
  * Calculate the minimum of two values.
  *
- * @arg {char} a - A value.
- * @arg {char} b - A value.
+ * @arg {int} a - A value.
+ * @arg {int} b - A value.
  *
- * @return {char} - The minimum of {a} and {b}.
+ * @return {int} - The minimum of {a} and {b}.
  */
-static inline char _min(char a, char b) {
+static inline int _min(int a, int b) {
   if (a < b)
     return a;
   return b;
@@ -24,17 +24,15 @@ static inline char _min(char a, char b) {
 /**
  * Initialise a matrix for semi-global alignment.
  *
- * @arg {unsigned char *} matrix - The alignment matrix.
- * @arg {unsigned int} rows - Number of rows in the matrix.
- * @arg {unsigned int} columns - Number of columns in the matrix.
- * @arg {unsigned char} indelScore - Penalty score for insertions and
+ * @arg {int *} matrix - The alignment matrix.
+ * @arg {int} rows - Number of rows in the matrix.
+ * @arg {int} columns - Number of columns in the matrix.
+ * @arg {int} indelScore - Penalty score for insertions and
  *   deletions.
  */
-void _initMatrix(
-    unsigned char *matrix, unsigned int rows, unsigned int columns,
-    unsigned char indelScore) {
-  unsigned char (*_matrix)[columns] = (unsigned char (*)[columns])matrix;
-  unsigned int i;
+void _initMatrix(int *matrix, int rows, int columns, int indelScore) {
+  int (*_matrix)[columns] = (int (*)[columns])matrix;
+  int i;
 
   for (i = 1; i < rows; i++)
     _matrix[i][0] = 0;
@@ -46,19 +44,19 @@ void _initMatrix(
 /**
  * Fill the alignment matrix.
  *
- * @arg {unsigned char *} matrix - The alignment matrix.
- * @arg {unsigned int} rows - Number of rows in the matrix.
- * @arg {unsigned int} columns - Number of columns in the matrix.
+ * @arg {int *} matrix - The alignment matrix.
+ * @arg {int} rows - Number of rows in the matrix.
+ * @arg {int} columns - Number of columns in the matrix.
  * @arg {char *} seq1 - The sequence to be aligned to.
  * @arg {char *} seq2 - The sequence to be aligned.
- * @arg {unsigned char} indelScore - Penalty score for insertions and
+ * @arg {int} indelScore - Penalty score for insertions and
  *   deletions.
  */
 void _align(
-    unsigned char *matrix, unsigned int rows, unsigned int columns,
-    char *seq1, char *seq2, unsigned char indelScore) {
-  unsigned char (*_matrix)[columns] = (unsigned char (*)[columns])matrix;
-  unsigned int r,
+    int *matrix, int rows, int columns, char *seq1, char *seq2,
+    int indelScore) {
+  int (*_matrix)[columns] = (int (*)[columns])matrix;
+  int r,
                c;
 
   for (r = 1; r < rows; r++)
@@ -73,17 +71,16 @@ void _align(
  * associated with the number of rows in an alignment matrix. If the minimum
  * distance is found, also return the row number.
  *
- * @arg {unsigned char *} matrix - An {rows} * {columns} matrix.
- * @arg {unsigned int} rows - Number of rows in the matrix.
- * @arg {unsigned int} columns - Number of columns in the matrix.
+ * @arg {int *} matrix - An {rows} * {columns} matrix.
+ * @arg {int} rows - Number of rows in the matrix.
+ * @arg {int} columns - Number of columns in the matrix.
  *
  * @return {alignment} - The minimum distance and its row number.
  */
-alignment _findMin(
-    unsigned char *matrix, unsigned int rows, unsigned int columns) {
-  unsigned char (*_matrix)[columns] = (unsigned char (*)[columns])matrix;
+alignment _findMin(int *matrix, int rows, int columns) {
+  int (*_matrix)[columns] = (int (*)[columns])matrix;
   alignment a;
-  unsigned int r;
+  int r;
 
   a.distance = columns - 1;
   a.position = 0;
@@ -101,17 +98,17 @@ alignment _findMin(
  *
  * @arg {char *} seq1 - The sequence to be aligned to.
  * @arg {char *} seq2 - The sequence to be aligned.
- * @arg {unsigned char} indelScore - Penalty score for insertions and
+ * @arg {int} indelScore - Penalty score for insertions and
  *   deletions.
  *
  * @return {alignment} - The minimum distance and its row number.
  */
-alignment align(char *seq1, char *seq2, unsigned char indelScore) {
+alignment align(char *seq1, char *seq2, int indelScore) {
   alignment a;
-  unsigned int rows = strlen(seq1) + 1,
+  int rows = strlen(seq1) + 1,
                columns = strlen(seq2) + 1;
-  unsigned char *matrix = (unsigned char *)malloc(
-    rows * columns * sizeof(unsigned char));
+  int *matrix = (int *)malloc(
+    rows * columns * sizeof(int));
 
   _initMatrix(matrix, rows, columns, indelScore);
   _align(matrix, rows, columns, seq1, seq2, indelScore);

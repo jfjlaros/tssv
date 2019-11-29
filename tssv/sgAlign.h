@@ -6,6 +6,6 @@ typedef struct {
       position;
 } alignment;
 
-alignment align(char *, char *, unsigned char);
+alignment align(char *, char *, int);
 
 #endif
