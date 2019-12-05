@@ -57,7 +57,7 @@ PyMethodDef pySgAlignMethods[] = {
     "Do a semi-global alignment of {seq2} to {seq1}.\n\n"
     "  :arg str seq1: The sequence to be aligned to.\n"
     "  :arg str seq2: The sequence to be aligned.\n"
-    "  :arg int indelScore: Penalty score for insertions and deletions.\n\n"
+    "  :arg int indel_score: Penalty score for insertions and deletions.\n\n"
     "  :returns dict alignment: The minimum distance and its row number.\n"},
   {
     "align_sse", pyAlignSSE, METH_VARARGS,
