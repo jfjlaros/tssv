@@ -43,7 +43,7 @@ def main():
 
     try:
         tssv(**{k: v for k, v in vars(args).items()
-            if k not in ('func', 'subcommand')})
+             if k not in ('func', 'subcommand')})
     except OSError as error:
         parser.error(error)
 

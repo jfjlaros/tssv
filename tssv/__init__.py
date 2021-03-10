@@ -1,4 +1,5 @@
 from argparse import FileType
+from os.path import exists
 from pkg_resources import get_distribution
 
 from .align_pair import align_pair

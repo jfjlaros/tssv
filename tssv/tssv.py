@@ -13,27 +13,27 @@ from .align_pair import align_pair
 file_names = {
     'unknown': 'unknown.seq',
     'markers': 'markers.csv',
-    'known'  : 'knownalleles.csv',
-    'new'    : 'newalleles.csv',
+    'known': 'knownalleles.csv',
+    'new': 'newalleles.csv',
     'nostart': 'nostart.csv',
-    'noend'  : 'noend.csv',
+    'noend': 'noend.csv',
     'summary': 'summary.csv'}
 """Names of the global report files."""
 
 marker_file_names = {
-    'known'       : 'known.seq',
-    'new'         : 'new.seq',
-    'noend'       : 'noend.seq',
-    'nostart'     : 'nostart.seq',
+    'known': 'known.seq',
+    'new': 'new.seq',
+    'noend': 'noend.seq',
+    'nostart': 'nostart.seq',
     'knownalleles': 'knownalleles.csv',
-    'newalleles'  : 'newalleles.csv'}
+    'newalleles': 'newalleles.csv'}
 """Names of the marker specific report files."""
 
 headers = {
-  'markers'   : 'name\tfPaired\trPaired\tfLeft\trLeft\tfRight\trRight\n',
-  'allele'    : 'allele\ttotal\tforward\treverse\n',
+  'markers': 'name\tfPaired\trPaired\tfLeft\trLeft\tfRight\trRight\n',
+  'allele': 'allele\ttotal\tforward\treverse\n',
   'nostartend': 'name\tforward\treverse\ttotal\n',
-  'overview'  : 'name\tforward\treverse\ttotal\tallele\n'}
+  'overview': 'name\tforward\treverse\ttotal\tallele\n'}
 """Headers for various tables."""
 
 
@@ -52,7 +52,7 @@ def parse_library(library_handle, threshold, mismatches=0):
     data = map(lambda x: x.strip().split('\t'), library_handle.readlines())
 
     for i in data:
-        pattern = '(?!x)x' # This will never match anything.
+        pattern = '(?!x)x'  # This will never match anything.
         if len(i) == 4:
             pat = i[3].split()
             pattern = '^{}$'.format(''.join(map(
@@ -84,15 +84,17 @@ def open_files(path, markers):
     :returns dict: Nested dictionary containing writable file handles.
     """
     mkdir(path)
-    files = dict(map(lambda x: 
-        (x, open('{}/{}'.format(path, file_names[x]), 'w')), file_names))
+    files = dict(map(lambda x:
+                     (x, open('{}/{}'.format(path, file_names[x]), 'w')),
+                     file_names))
     for i in markers:
         marker_path = '{}/{}'.format(path, i)
 
         mkdir(marker_path)
         files[i] = dict(map(lambda x:
-            (x, open('{}/{}'.format(marker_path, marker_file_names[x]), 'w')),
-            marker_file_names))
+                        (x, open('{}/{}'.format(
+                            marker_path, marker_file_names[x]), 'w')),
+                        marker_file_names))
 
     return files
 
@@ -124,17 +126,17 @@ def rewrite(regular_expression, pattern):
     match = regular_expression.match(pattern)
 
     regs = reduce(lambda x, y:
-        x if y == ((-1, -1), None) else
-            x[:-1] + [y] if x[-1][1] == y[1] else
-            x + [y],
-        map(lambda x: (match.regs[x], match.group(x)),
-        range(1, len(match.regs))), [((0, 0), None)])
+                  x if y == ((-1, -1), None) else
+                  x[:-1] + [y] if x[-1][1] == y[1] else
+                  x + [y],
+                  map(lambda x: (match.regs[x], match.group(x)),
+                      range(1, len(match.regs))), [((0, 0), None)])
 
     for i in range(len(regs) - 1):
         new_pattern += '{}({})'.format(
             regs[i + 1][1], (
                 regs[i + 1][0][1] - regs[i][0][1]) /
-                (regs[i + 1][0][1] - regs[i + 1][0][0]))
+            (regs[i + 1][0][1] - regs[i + 1][0][0]))
 
     return new_pattern
 
@@ -147,16 +149,16 @@ def allele_table(new_allele, minimum):
 
     :returns list: Allele statistics table.
     """
-    l = []
+    result = []
 
     for i in sorted(
             new_allele, key=lambda x: sum(new_allele[x]), reverse=True):
         if sum(new_allele[i]) < minimum:
             break
 
-        l.append([i] + [sum(new_allele[i])] + new_allele[i])
+        result.append([i] + [sum(new_allele[i])] + new_allele[i])
 
-    return l
+    return result
 
 
 def summary_table(allele, minimum):
@@ -186,9 +188,10 @@ def make_tables(total, unrecognised, library, minimum):
     no_end = []
 
     tables = {
-        'library':  map(lambda x:
-            [x] + library[x]['pair_match'] + library[x]['counts'], library),
-        'allele' : defaultdict(dict)}
+        'library': map(lambda x:
+                       [x] + library[x]['pair_match'] + library[x]['counts'],
+                       library),
+        'allele': defaultdict(dict)}
 
     for i in library:
         for j in library[i]['known']:
@@ -219,10 +222,12 @@ def make_tables(total, unrecognised, library, minimum):
     tables['summary'] = [
         ['total reads', total],
         ['matched pairs', sum(map(lambda x:
-            sum(library[x]['pair_match']), library))],
+                                  sum(library[x]['pair_match']), library))],
         ['new alleles',  sum(map(lambda x: x[3], tables['new']))],
         ['new unique alleles', sum(map(lambda x:
-            len(allele_table(library[x]['new'], minimum)), library))],
+                                       len(allele_table(library[x]['new'],
+                                           minimum)),
+                                       library))],
         ['no start', sum(map(lambda x: x[3], tables['nostart']))],
         ['no end', sum(map(lambda x: x[3], tables['noend']))],
         ['unrecognised reads', unrecognised]]
@@ -247,9 +252,9 @@ def make_report(tables, handle):
 
         mean_length = 0
         sum_of_lengths = sum(map(lambda x:
-            len(x[0]) * x[1], tables['allele'][i]['new']))
+                                 len(x[0]) * x[1], tables['allele'][i]['new']))
         number_of_alleles = sum(map(lambda x:
-            x[1], tables['allele'][i]['new']))
+                                    x[1], tables['allele'][i]['new']))
         if number_of_alleles:
             mean_length = sum_of_lengths / number_of_alleles
 
