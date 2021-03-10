@@ -3,8 +3,8 @@ TSSV: Targeted characterisation of short structural variation
 
 .. image:: https://img.shields.io/github/last-commit/jfjlaros/tssv.svg
    :target: https://github.com/jfjlaros/tssv/graphs/commit-activity
-.. image:: https://travis-ci.org/jfjlaros/tssv.svg?branch=master
-   :target: https://travis-ci.org/jfjlaros/tssv
+.. image:: https://github.com/jfjlaros/tssv/actions/workflows/python-package.yml/badge.svg
+   :target: https://github.com/jfjlaros/tssv/actions/workflows/python-package.yml
 .. image:: https://readthedocs.org/projects/tssv/badge/?version=latest
    :target: https://tssv.readthedocs.io/en/latest
 .. image:: https://img.shields.io/github/release-date/jfjlaros/tssv.svg
