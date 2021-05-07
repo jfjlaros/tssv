@@ -1,5 +1,6 @@
 from argparse import ArgumentParser, FileType, RawDescriptionHelpFormatter
 from sys import stdout
+import xopen
 
 from . import usage, version
 from .tssv import tssv
@@ -12,7 +13,7 @@ def main():
         formatter_class=RawDescriptionHelpFormatter)
 
     parser.add_argument(
-        'input_handle', metavar='INPUT', type=FileType('r'),
+        'input_handle', metavar='INPUT',
         help='a FASTA/FASTQ file')
     parser.add_argument(
         'library_handle', metavar='LIBRARY', type=FileType('r'),
@@ -40,6 +41,17 @@ def main():
     parser.add_argument('-v', action='version', version=version(parser.prog))
 
     args = parser.parse_args()
+
+    # Have a little look in the input file to determine the file format.
+    with xopen.xopen(args.input_handle, 'r') as fin:
+        if next(fin).startswith('>'):
+            args.file_format = 'fasta'
+        else:
+            args.file_format = 'fastq'
+
+    # Now that we we know the file format, we can open the file again and read
+    # have access to the full file content.
+    args.input_handle = xopen.xopen(args.input_handle)
 
     try:
         tssv(**{k: v for k, v in vars(args).items()
