@@ -5,7 +5,6 @@ from os import mkdir
 from re import compile as re_compile
 
 from Bio import Seq, SeqIO
-from fastools.utils import guess_file_format
 
 from .align_pair import align_pair
 
@@ -287,7 +286,7 @@ def write_files(tables, files):
 
 def tssv(
         input_handle, library_handle, report_handle, path, threshold,
-        mismatches, minimum, indel_score, method_sse):
+        mismatches, minimum, indel_score, method_sse, file_format):
     """Do the short structural variation analysis.
 
     :arg stream input_handle: Open readable handle to a FASTA file.
@@ -300,11 +299,11 @@ def tssv(
     :arg int indel_score: Penalty score for insertions and deletions per
         nucleotide
     :arg bool method_sse: Use SSE2 alignment implementation.
+    :arg str file_format: File format of input_handle, either 'fasta' or 'fastq'.
     """
     total = 0
     unrecognised = 0
     library = parse_library(library_handle, threshold, mismatches)
-    file_format = guess_file_format(input_handle)
 
     if path:
         files = open_files(path, library)
