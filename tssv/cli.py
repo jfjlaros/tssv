@@ -49,7 +49,7 @@ def main():
         else:
             args.file_format = 'fastq'
 
-    # Now that we we know the file format, we can open the file again and read
+    # Now that we we know the file format, we can open the file again and
     # have access to the full file content.
     args.input_handle = xopen.xopen(args.input_handle)
 
