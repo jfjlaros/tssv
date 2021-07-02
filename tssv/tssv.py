@@ -1,5 +1,6 @@
 from collections import defaultdict
 from functools import reduce
+import json
 from math import ceil
 from os import mkdir
 from re import compile as re_compile
@@ -262,6 +263,25 @@ def make_report(tables, handle):
         write_table(tables['allele'][i]['new'], headers['allele'], handle)
 
 
+def make_json(tables, handle):
+    """Make an overview of the results per marker, for downstream parsing.
+
+    :arg dict tables: A nested dictionary containing overview tables.
+    :arg stream handle: Open writable handle to the json file.
+    """
+    alleles  = tables['allele']
+    head = headers['allele'].strip().split('\t')
+
+    # Add the allele headers to the results dictionary
+    with_headers = dict()
+    for marker, data in alleles.items():
+        known = [ {k:v for k,v in zip(head, mark)} for mark in data['known']]
+        new = [ {k:v for k,v in zip(head, mark)} for mark in data['new']]
+        with_headers[marker] = { 'known': known, 'new': new }
+
+    json.dump(with_headers, indent=True, fp=handle)
+
+
 def write_files(tables, files):
     """Write the overview tables to the appropriate files.
 
@@ -285,8 +305,8 @@ def write_files(tables, files):
 
 
 def tssv(
-        input_handle, library_handle, report_handle, path, threshold,
-        mismatches, minimum, indel_score, method_sse, file_format):
+        input_handle, library_handle, report_handle, json_handle, path,
+        threshold, mismatches, minimum, indel_score, method_sse, file_format):
     """Do the short structural variation analysis.
 
     :arg stream input_handle: Open readable handle to a FASTA file.
@@ -397,3 +417,4 @@ def tssv(
         write_files(tables, files)
 
     make_report(tables, report_handle)
+    make_json(tables, json_handle)
