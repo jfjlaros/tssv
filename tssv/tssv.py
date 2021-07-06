@@ -235,7 +235,7 @@ def make_tables(total, unrecognised, library, minimum):
     return tables
 
 
-def make_report(tables, handle):
+def make_text_report(tables, handle):
     """Make an overview of the results.
 
     :arg dict tables: A nested dictionary containing overview tables.
@@ -263,7 +263,7 @@ def make_report(tables, handle):
         write_table(tables['allele'][i]['new'], headers['allele'], handle)
 
 
-def make_json(tables, handle):
+def make_json_report(tables, handle):
     """Make an overview of the results per marker, for downstream parsing.
 
     :arg dict tables: A nested dictionary containing overview tables.
@@ -331,6 +331,7 @@ def tssv(
     :arg stream input_handle: Open readable handle to a FASTA file.
     :arg stream library_handle: Open readable handle to a library file.
     :arg stream report_handle: Open writable handle to the report file.
+    :arg str report_format: Format for the report file.
     :arg str path: Name of the output folder.
     :arg float threshold: Number of allowed mismatches per nucleotide.
     :arg int mismatches: If set, overrides the dynamic threshold calculation.
@@ -436,6 +437,6 @@ def tssv(
         write_files(tables, files)
 
     if report_format == 'text':
-        make_report(tables, report_handle)
+        make_text_report(tables, report_handle)
     if report_format == 'json':
-        make_json(tables, report_handle)
+        make_json_report(tables, report_handle)
