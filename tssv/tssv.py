@@ -275,14 +275,16 @@ def make_json_report(tables, handle):
     alleles  = tables['allele']
     head = headers['allele'].strip().split('\t')
 
-    # Add the allele headers to the results dictionary
-    with_headers = dict()
+    # Add 'marker' section to the json report
+    report['marker'] = dict()
     for marker, data in alleles.items():
+        # Add the individual marker to the report
+        report['marker'][marker] = dict()
         known = [ {k:v for k,v in zip(head, mark)} for mark in data['known']]
         new = [ {k:v for k,v in zip(head, mark)} for mark in data['new']]
-        with_headers[marker] = { 'known': known, 'new': new }
+        report['marker'][marker]['allele'] = { 'known': known, 'new': new }
 
-    report['allele'] = with_headers
+    #report['allele'] = with_headers
 
     ## Parse the summary data
     summary = {field:value for field,value in tables['summary']}
@@ -291,12 +293,12 @@ def make_json_report(tables, handle):
     ## Parse library data
     head = headers['markers'].strip().split('\t')
 
-    library = dict()
     for i in tables['library']:
         row = {field:value for field, value in zip(head, i)}
         marker = row.pop('name')
-        library[marker] = row
-    report['library'] = library
+        report['marker'][marker]['library'] = row
+        #library[marker] = row
+    #report['library'] = library
 
     json.dump(report, indent=True, fp=handle)
 
