@@ -269,6 +269,15 @@ def make_json_report(tables, handle):
     :arg dict tables: A nested dictionary containing overview tables.
     :arg stream handle: Open writable handle to the json file.
     """
+
+    def clean_allele(allele):
+        """ Allele can be "A", or "A(1.0), and should be "A" """
+        try:
+            i = allele.index('(')
+            return allele[:i]
+        except ValueError:
+            return allele
+
     report = dict()
 
     ## Parse the allele data
@@ -282,6 +291,13 @@ def make_json_report(tables, handle):
         report['marker'][marker] = dict()
         known = [ {k:v for k,v in zip(head, mark)} for mark in data['known']]
         new = [ {k:v for k,v in zip(head, mark)} for mark in data['new']]
+
+        # Clean up the allele field, which can be "A", but also "A(1.0)"
+        for allele in known:
+            allele['allele'] = clean_allele(allele['allele'])
+        for allele in new:
+            allele['allele'] = clean_allele(allele['allele'])
+
         report['marker'][marker]['allele'] = { 'known': known, 'new': new }
 
     #report['allele'] = with_headers
