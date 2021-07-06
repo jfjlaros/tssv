@@ -269,6 +269,9 @@ def make_json(tables, handle):
     :arg dict tables: A nested dictionary containing overview tables.
     :arg stream handle: Open writable handle to the json file.
     """
+    report = dict()
+
+    ## Parse the allele data
     alleles  = tables['allele']
     head = headers['allele'].strip().split('\t')
 
@@ -279,7 +282,23 @@ def make_json(tables, handle):
         new = [ {k:v for k,v in zip(head, mark)} for mark in data['new']]
         with_headers[marker] = { 'known': known, 'new': new }
 
-    json.dump(with_headers, indent=True, fp=handle)
+    report['allele'] = with_headers
+
+    ## Parse the summary data
+    summary = {field:value for field,value in tables['summary']}
+    report['summary'] = summary
+
+    ## Parse library data
+    head = headers['markers'].strip().split('\t')
+
+    library = dict()
+    for i in tables['library']:
+        row = {field:value for field, value in zip(head, i)}
+        marker = row.pop('name')
+        library[marker] = row
+    report['library'] = library
+
+    json.dump(report, indent=True, fp=handle)
 
 
 def write_files(tables, files):
@@ -416,5 +435,5 @@ def tssv(
     if path:
         write_files(tables, files)
 
-    make_report(tables, report_handle)
     make_json(tables, json_handle)
+    make_report(tables, report_handle)
