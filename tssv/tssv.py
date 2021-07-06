@@ -1,6 +1,6 @@
 from collections import defaultdict
 from functools import reduce
-import json
+from json import dump
 from math import ceil
 from os import mkdir
 from re import compile as re_compile
@@ -300,7 +300,7 @@ def make_json_report(tables, handle):
         #library[marker] = row
     #report['library'] = library
 
-    json.dump(report, indent=True, fp=handle)
+    dump(report, indent=True, fp=handle)
 
 
 def write_files(tables, files):
