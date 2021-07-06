@@ -314,8 +314,6 @@ def make_json_report(tables, handle):
         row = {field:value for field, value in zip(head, i)}
         marker = row.pop('name')
         report['marker'][marker]['library'] = row
-        #library[marker] = row
-    #report['library'] = library
 
     dump(report, indent=True, fp=handle)
 
