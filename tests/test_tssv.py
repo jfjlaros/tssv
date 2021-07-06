@@ -2,7 +2,7 @@
 from io import StringIO
 
 from tssv.tssv import parse_library
-from tssv.tssv import make_json_report
+from tssv.tssv import clean_allele
 
 
 class TestTSSV(object):
@@ -29,6 +29,6 @@ class TestTSSV(object):
         raw = ['A', 'AA', 'A(1.0)', 'AA(2.4)']
         expected = ['A', 'AA', 'A', 'AA']
 
-        out = [make_json_report.clean_allele(x) for x in raw]
+        out = [clean_allele(x) for x in raw]
 
         assert out == expected

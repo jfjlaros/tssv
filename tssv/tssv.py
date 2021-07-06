@@ -263,20 +263,21 @@ def make_text_report(tables, handle):
         write_table(tables['allele'][i]['new'], headers['allele'], handle)
 
 
+def clean_allele(allele):
+    """ Allele can be "A", or "A(1.0), and should be "A" """
+    try:
+        i = allele.index('(')
+        return allele[:i]
+    except ValueError:
+        return allele
+
+
 def make_json_report(tables, handle):
     """Make an overview of the results per marker, for downstream parsing.
 
     :arg dict tables: A nested dictionary containing overview tables.
     :arg stream handle: Open writable handle to the json file.
     """
-
-    def clean_allele(allele):
-        """ Allele can be "A", or "A(1.0), and should be "A" """
-        try:
-            i = allele.index('(')
-            return allele[:i]
-        except ValueError:
-            return allele
 
     report = dict()
 
