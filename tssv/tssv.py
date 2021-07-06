@@ -324,7 +324,7 @@ def write_files(tables, files):
 
 
 def tssv(
-        input_handle, library_handle, report_handle, json_handle, path,
+        input_handle, library_handle, report_handle, report_format, path,
         threshold, mismatches, minimum, indel_score, method_sse, file_format):
     """Do the short structural variation analysis.
 
@@ -435,5 +435,7 @@ def tssv(
     if path:
         write_files(tables, files)
 
-    make_json(tables, json_handle)
-    make_report(tables, report_handle)
+    if report_format == 'text':
+        make_report(tables, report_handle)
+    if report_format == 'json':
+        make_json(tables, report_handle)
