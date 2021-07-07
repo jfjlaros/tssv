@@ -4,6 +4,7 @@ from json import dump
 from math import ceil
 from os import mkdir
 from re import compile as re_compile
+from re import search
 
 from Bio import Seq, SeqIO
 
@@ -263,13 +264,31 @@ def make_text_report(tables, handle):
         write_table(tables['allele'][i]['new'], headers['allele'], handle)
 
 
-def clean_allele(allele):
-    """ Allele can be "A", or "A(1.0), and should be "A" """
-    try:
-        i = allele.index('(')
-        return allele[:i]
-    except ValueError:
+def expand_allele(allele):
+    """ Expand the allele based on the specified number of occurrences
+
+    The allele contains the nucleotide(s), as well as optionally the number
+    of occurrences of the nucleotide stretch, as specified in the library.
+
+    Here, we expand the specified nucleotides and count to the actual sequence
+
+    A       -> A
+    A(1.0)  -> A
+    AA(2.0) -> AAAA
+    TA(3.0) -> TATATA
+    :arg str allele: The allele, possibly including the expected number of occurrences.
+    """
+    result = search("([ATCGN]+)((.*))", allele)
+    allele = result.group(1)
+    count = result.group(2)
+
+    # If no count between brackets was present
+    if not count:
         return allele
+    else:
+        # Cut off the brackets and convert to int
+        count = int(float(count[1:-1]))
+        return allele*count
 
 
 def make_json_report(tables, handle):
@@ -295,9 +314,9 @@ def make_json_report(tables, handle):
 
         # Clean up the allele field, which can be "A", but also "A(1.0)"
         for allele in known:
-            allele['allele'] = clean_allele(allele['allele'])
+            allele['allele'] = expand_allele(allele['allele'])
         for allele in new:
-            allele['allele'] = clean_allele(allele['allele'])
+            allele['allele'] = expand_allele(allele['allele'])
 
         report['marker'][marker]['allele'] = { 'known': known, 'new': new }
 
