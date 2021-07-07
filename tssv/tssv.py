@@ -134,7 +134,7 @@ def rewrite(regular_expression, pattern):
     for i in range(len(regs) - 1):
         new_pattern += '{}({})'.format(
             regs[i + 1][1], (
-                regs[i + 1][0][1] - regs[i][0][1]) /
+                regs[i + 1][0][1] - regs[i][0][1]) //
             (regs[i + 1][0][1] - regs[i + 1][0][0]))
 
     return new_pattern
