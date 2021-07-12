@@ -1,8 +1,10 @@
 from collections import defaultdict
 from functools import reduce
+from json import dump
 from math import ceil
 from os import mkdir
 from re import compile as re_compile
+from re import search
 
 from Bio import Seq, SeqIO
 
@@ -234,7 +236,7 @@ def make_tables(total, unrecognised, library, minimum):
     return tables
 
 
-def make_report(tables, handle):
+def make_text_report(tables, handle):
     """Make an overview of the results.
 
     :arg dict tables: A nested dictionary containing overview tables.
@@ -262,6 +264,88 @@ def make_report(tables, handle):
         write_table(tables['allele'][i]['new'], headers['allele'], handle)
 
 
+def expand_allele(allele):
+    """ Expand the allele based on the specified number of occurrences
+
+    The allele contains the nucleotide(s), as well as optionally the number
+    of occurrences of the nucleotide stretch, as specified in the library.
+
+    Here, we expand the specified nucleotides and count to the actual sequence
+
+    :arg str allele: The allele, possibly including the expected number of occurrences.
+
+    >>> expand_allele('A')
+    'A'
+
+    >>> expand_allele('A(1.0)')
+    'A'
+
+    >>> expand_allele('AA(2.0)')
+    'AAAA'
+
+    >>> expand_allele('TA(3.0)')
+    'TATATA'
+
+    >>> expand_allele('ATA(2)GGG(2)C(5)')
+    'ATAATAGGGGGGCCCCC'
+    """
+    # If there are no repeats specified, simply return the allele
+    if ')' not in allele:
+        return allele
+
+    expanded = ''
+    for pattern in allele.split(')')[:-1]:
+        nucleotides, count = pattern.split('(')
+        expanded += nucleotides*int(float(count))
+    return expanded
+
+
+def make_json_report(tables, handle):
+    """Make an overview of the results per marker, for downstream parsing.
+
+    :arg dict tables: A nested dictionary containing overview tables.
+    :arg stream handle: Open writable handle to the json file.
+    """
+
+    report = dict()
+
+    ## Parse the allele data
+    alleles  = tables['allele']
+    head = headers['allele'].strip().split('\t')
+
+    # Add 'marker' section to the json report
+    report['marker'] = dict()
+    for marker, data in alleles.items():
+        # Add the individual marker to the report
+        report['marker'][marker] = dict()
+        known = [ {k:v for k,v in zip(head, mark)} for mark in data['known']]
+        new = [ {k:v for k,v in zip(head, mark)} for mark in data['new']]
+
+        # Clean up the allele field, which can be "A", but also "A(1.0)"
+        for allele in known:
+            allele['allele'] = expand_allele(allele['allele'])
+        for allele in new:
+            allele['allele'] = expand_allele(allele['allele'])
+
+        report['marker'][marker]['allele'] = { 'known': known, 'new': new }
+
+    #report['allele'] = with_headers
+
+    ## Parse the summary data
+    summary = {field:value for field,value in tables['summary']}
+    report['summary'] = summary
+
+    ## Parse library data
+    head = headers['markers'].strip().split('\t')
+
+    for i in tables['library']:
+        row = {field:value for field, value in zip(head, i)}
+        marker = row.pop('name')
+        report['marker'][marker]['library'] = row
+
+    dump(report, indent=True, fp=handle)
+
+
 def write_files(tables, files):
     """Write the overview tables to the appropriate files.
 
@@ -285,13 +369,14 @@ def write_files(tables, files):
 
 
 def tssv(
-        input_handle, library_handle, report_handle, path, threshold,
-        mismatches, minimum, indel_score, method_sse, file_format):
+        input_handle, library_handle, report_handle, report_format, path,
+        threshold, mismatches, minimum, indel_score, method_sse, file_format):
     """Do the short structural variation analysis.
 
     :arg stream input_handle: Open readable handle to a FASTA file.
     :arg stream library_handle: Open readable handle to a library file.
     :arg stream report_handle: Open writable handle to the report file.
+    :arg str report_format: Format for the report file.
     :arg str path: Name of the output folder.
     :arg float threshold: Number of allowed mismatches per nucleotide.
     :arg int mismatches: If set, overrides the dynamic threshold calculation.
@@ -396,4 +481,7 @@ def tssv(
     if path:
         write_files(tables, files)
 
-    make_report(tables, report_handle)
+    if report_format == 'text':
+        make_text_report(tables, report_handle)
+    if report_format == 'json':
+        make_json_report(tables, report_handle)

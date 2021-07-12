@@ -31,6 +31,9 @@ def main():
     parser.add_argument(
         '-r', dest='report_handle', type=FileType('w'), default=stdout,
         help='name of the report file')
+    parser.add_argument(
+        '-f', dest='report_format', type=str, choices = ['text', 'json'],
+        default='text', help='format of the output file')
     parser.add_argument('-d', dest='path', type=str, help='output directory')
     parser.add_argument(
         '-a', dest='minimum', type=int, default=0,
