@@ -272,23 +272,32 @@ def expand_allele(allele):
 
     Here, we expand the specified nucleotides and count to the actual sequence
 
-    A       -> A
-    A(1.0)  -> A
-    AA(2.0) -> AAAA
-    TA(3.0) -> TATATA
     :arg str allele: The allele, possibly including the expected number of occurrences.
-    """
-    result = search("([ATCGN]+)((.*))", allele)
-    allele = result.group(1)
-    count = result.group(2)
 
-    # If no count between brackets was present
-    if not count:
+    >>> expand_allele('A')
+    'A'
+
+    >>> expand_allele('A(1.0)')
+    'A'
+
+    >>> expand_allele('AA(2.0)')
+    'AAAA'
+
+    >>> expand_allele('TA(3.0)')
+    'TATATA'
+
+    >>> expand_allele('ATA(2)GGG(2)C(5)')
+    'ATAATAGGGGGGCCCCC'
+    """
+    # If there are no repeats specified, simply return the allele
+    if ')' not in allele:
         return allele
-    else:
-        # Cut off the brackets and convert to int
-        count = int(float(count[1:-1]))
-        return allele*count
+
+    expanded = ''
+    for pattern in allele.split(')')[:-1]:
+        nucleotides, count = pattern.split('(')
+        expanded += nucleotides*int(float(count))
+    return expanded
 
 
 def make_json_report(tables, handle):
