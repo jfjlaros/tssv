@@ -4,7 +4,6 @@ from json import dump
 from math import ceil
 from os import mkdir
 from re import compile as re_compile
-from re import search
 
 from Bio import Seq, SeqIO
 
@@ -264,42 +263,6 @@ def make_text_report(tables, handle):
         write_table(tables['allele'][i]['new'], headers['allele'], handle)
 
 
-def expand_allele(allele):
-    """ Expand the allele based on the specified number of occurrences
-
-    The allele contains the nucleotide(s), as well as optionally the number
-    of occurrences of the nucleotide stretch, as specified in the library.
-
-    Here, we expand the specified nucleotides and count to the actual sequence
-
-    :arg str allele: The allele, possibly including the expected number of occurrences.
-
-    >>> expand_allele('A')
-    'A'
-
-    >>> expand_allele('A(1.0)')
-    'A'
-
-    >>> expand_allele('AA(2.0)')
-    'AAAA'
-
-    >>> expand_allele('TA(3.0)')
-    'TATATA'
-
-    >>> expand_allele('ATA(2)GGG(2)C(5)')
-    'ATAATAGGGGGGCCCCC'
-    """
-    # If there are no repeats specified, simply return the allele
-    if ')' not in allele:
-        return allele
-
-    expanded = ''
-    for pattern in allele.split(')')[:-1]:
-        nucleotides, count = pattern.split('(')
-        expanded += nucleotides*int(float(count))
-    return expanded
-
-
 def make_json_report(tables, handle):
     """Make an overview of the results per marker, for downstream parsing.
 
@@ -321,15 +284,7 @@ def make_json_report(tables, handle):
         known = [ {k:v for k,v in zip(head, mark)} for mark in data['known']]
         new = [ {k:v for k,v in zip(head, mark)} for mark in data['new']]
 
-        # Clean up the allele field, which can be "A", but also "A(1.0)"
-        for allele in known:
-            allele['allele'] = expand_allele(allele['allele'])
-        for allele in new:
-            allele['allele'] = expand_allele(allele['allele'])
-
         report['marker'][marker]['allele'] = { 'known': known, 'new': new }
-
-    #report['allele'] = with_headers
 
     ## Parse the summary data
     summary = {field:value for field,value in tables['summary']}
