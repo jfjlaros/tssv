@@ -14,7 +14,7 @@ class ProtectedFileType(FileType):
 
 
 def _get_metadata(name):
-    pkg = get_distribution(__package__)
+    pkg = get_distribution('tssv')
 
     for line in pkg.get_metadata_lines(pkg.PKG_INFO):
         if line.startswith('{}: '.format(name)):
