@@ -38,9 +38,6 @@ def main():
     parser.add_argument(
         '-a', dest='minimum', type=int, default=0,
         help='minimum count per allele (default=%(default)s)')
-    parser.add_argument(
-        '-s', dest='method_sse', action='store_true',
-        help='if specified, use SSE2 alignment implementation')
     parser.add_argument('-v', action='version', version=version(parser.prog))
 
     args = parser.parse_args()

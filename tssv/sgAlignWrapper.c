@@ -1,7 +1,6 @@
 #include <Python.h>
 
 #include "sgAlign.h"
-#include "sgAlignSSE.h"
 
 
 /**
@@ -30,24 +29,6 @@ PyObject *pyAlign(PyObject *self, PyObject *args) {
   return pyAlignment(a.distance, a.position);
 }
 
-/**
- * Wrapper for alignSSE function.
- */
-PyObject *pyAlignSSE(PyObject *self, PyObject *args) {
-  char *seq1,
-       *seq2,
-       indel_score;
-  alignment a;
-
-  if (!PyArg_ParseTuple(args, "ssb", &seq1, &seq2, &indel_score)) {
-    return NULL;
-  }
-
-  a = alignSSE(seq1, seq2, indel_score);
-
-  return pyAlignment(a.distance, a.position);
-}
-
 /*
  * Module methods.
  */
@@ -59,9 +40,6 @@ PyMethodDef pySgAlignMethods[] = {
     "  :arg str seq2: The sequence to be aligned.\n"
     "  :arg int indel_score: Penalty score for insertions and deletions.\n\n"
     "  :returns dict alignment: The minimum distance and its row number.\n"},
-  {
-    "align_sse", pyAlignSSE, METH_VARARGS,
-    "SSE implementation of {align}."},
   {NULL, NULL, 0, NULL}
 };
 

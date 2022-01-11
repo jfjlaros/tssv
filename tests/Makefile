@@ -1,7 +1,7 @@
 EXEC := run_tests
 MAIN := test_lib
-TESTS := test_sgAlign test_sgAlignSSE
-LIBS := ../tssv/sgAlign ../tssv/sgAlignSSE
+TESTS := test_sgAlign
+LIBS := ../tssv/sgAlign
 FIXTURES :=
 
 
