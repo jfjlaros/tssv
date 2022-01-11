@@ -56,8 +56,8 @@ void _align(
     int *matrix, int rows, int columns, char *seq1, char *seq2,
     int indelScore) {
   int (*_matrix)[columns] = (int (*)[columns])matrix;
-  int r,
-               c;
+  int r;
+  int c;
 
   for (r = 1; r < rows; r++)
     for (c = 1; c < columns; c++)

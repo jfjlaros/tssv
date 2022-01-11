@@ -325,7 +325,7 @@ def write_files(tables, files):
 
 def tssv(
         input_handle, library_handle, report_handle, json_report, path,
-        threshold, mismatches, minimum, indel_score, method_sse, file_format):
+        threshold, mismatches, minimum, indel_score, file_format):
     """Do the short structural variation analysis.
 
     :arg stream input_handle: Open readable handle to a FASTA file.
@@ -338,7 +338,6 @@ def tssv(
     :arg int minimum: Minimum count per allele.
     :arg int indel_score: Penalty score for insertions and deletions per
         nucleotide
-    :arg bool method_sse: Use SSE2 alignment implementation.
     :arg str file_format: File format of input_handle, either 'fasta' or 'fastq'.
     """
     total = 0
@@ -358,11 +357,9 @@ def tssv(
             # Align against all-uppercase reference sequence.
             alignments = (
                 align_pair(
-                    ref_up[0], ref_up[1], library[i]['flanks'], indel_score,
-                    method_sse),
+                    ref_up[0], ref_up[1], library[i]['flanks'], indel_score),
                 align_pair(
-                    ref_up[1], ref_up[0], library[i]['flanks'], indel_score,
-                    method_sse))
+                    ref_up[1], ref_up[0], library[i]['flanks'], indel_score))
             matches = [False, False, False, False]
             classification = ''
 
