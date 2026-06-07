@@ -3,14 +3,16 @@ requires = ['setuptools']
 build-backend = 'setuptools.build_meta'
 
 [tool.setuptools]
-#packages = ['tssv']
 package-dir = {tssv = 'tssv', tssv_extras = 'extras/annotate'}
 ext-modules = [{name = 'tssv.sg_align', sources = ['tssv/sgAlignWrapper.c', 'tssv/sgAlign.c'], extra-compile-args = ['-O3']}]
+
+[tool.setuptools.package-data]
+tssv = ['sgAlign.h']
 
 [project]
 name = 'TSSV'
 description = 'Targeted characterisation of short structural variation.'
-version = '1.2.0'
+version = '1.2.1'
 
 authors = [{name = 'Jeroen F.J. Laros', email = 'jlaros@fixedpoint.nl'}]
 urls = {homepage = 'https://git.lumc.nl/j.f.j.laros/tssv'}
