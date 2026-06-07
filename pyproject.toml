@@ -1,0 +1,30 @@
+[build-system]
+requires = ['setuptools']
+build-backend = 'setuptools.build_meta'
+
+[tool.setuptools]
+#packages = ['tssv']
+package-dir = {tssv = 'tssv', tssv_extras = 'extras/annotate'}
+ext-modules = [{name = 'tssv.sg_align', sources = ['tssv/sgAlignWrapper.c', 'tssv/sgAlign.c'], extra-compile-args = ['-O3']}]
+
+[project]
+name = 'TSSV'
+description = 'Targeted characterisation of short structural variation.'
+version = '1.2.0'
+
+authors = [{name = 'Jeroen F.J. Laros', email = 'jlaros@fixedpoint.nl'}]
+urls = {homepage = 'https://git.lumc.nl/j.f.j.laros/tssv'}
+readme = 'README.rst'
+keywords = ['bioinformatics']
+classifiers = [
+    'Programming Language :: Python :: 3',
+    'Operating System :: OS Independent',
+    'Intended Audience :: Science/Research',
+    'Topic :: Scientific/Engineering']
+license = 'MIT'
+
+dependencies = ['biopython', 'requests', 'xopen']
+
+[project.scripts]
+tssv = 'tssv.cli:main'
+tannotate = 'tssv_extras.annotate:main'

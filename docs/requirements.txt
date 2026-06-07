@@ -1,4 +1,1 @@
-docutils==0.17.1
-six
-sphinx-argparse
-sphinx-autodoc-typehints
+sphinx-rtd-theme

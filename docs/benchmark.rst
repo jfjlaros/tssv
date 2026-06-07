@@ -5,7 +5,7 @@ First we make datasets, these are multiples of the ``test.fa`` file in the
 ``data`` directory. The original file contains 9 records, so the largest
 generated dataset will contain 9000 records.
 
-..code:: sh
+.. code:: sh
 
     for j in 1 2 3 4 5 10 20 30 40 100 200 300 400 1000; do
       i=0
@@ -18,7 +18,7 @@ generated dataset will contain 9000 records.
 The tests are done with this snippet. We print the relative size of the dataset
 and the amount of (user) seconds it takes for the program to run.
 
-..code:: sh
+.. code:: sh
 
     for i in 1 2 3 4 5 10 20 30 40 100 200 300 400 1000; do
       echo -n "$i "
@@ -35,7 +35,7 @@ To estimate the speedup, we calculate the ratio of the raw run times for both
 tests. This results in a file containing the relative size of the dataset and
 the ratio of run times per test.
 
-..code:: sh
+.. code:: sh
 
     IFS="
     "

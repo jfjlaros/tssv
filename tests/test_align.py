@@ -5,7 +5,7 @@ from tssv import align_pair
 
 
 class TestAlign(object):
-    def setup(self):
+    def setup_method(self):
         self._reference = 'GACTGTCGTGGGCTCTTACGCACATATTATAACTTTCATAAGTTTGTCAG'
         self._reference_rc = Seq.reverse_complement(self._reference)
 

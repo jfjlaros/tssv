@@ -15,10 +15,10 @@ PyObject *pyAlignment(int distance, int position) {
  * Wrapper for align function.
  */
 PyObject *pyAlign(PyObject *self, PyObject *args) {
-  char *seq1,
-       *seq2;
+  char *seq1;
+  char *seq2;
   int indel_score;
-  alignment a;
+  Alignment a;
 
   if (!PyArg_ParseTuple(args, "ssi", &seq1, &seq2, &indel_score)) {
     return NULL;

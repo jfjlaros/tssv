@@ -8,7 +8,7 @@ from tssv_extras import annotate
 
 class TestAnnotation(object):
     """Test the annotation CLI."""
-    def setup(self):
+    def setup_method(self):
         self._input = open('data/m1_newalleles.csv')
         self._output = StringIO()
 

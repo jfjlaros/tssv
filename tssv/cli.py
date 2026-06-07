@@ -2,14 +2,14 @@ from argparse import ArgumentParser, FileType, RawDescriptionHelpFormatter
 from sys import stdout
 from xopen import xopen
 
-from . import usage, version
+from . import _copyright, _description, _info
 from .tssv import tssv
 
 
 def main():
     """Main entry point."""
     parser = ArgumentParser(
-        description=usage[0], epilog=usage[1],
+        description=_description, epilog=_copyright,
         formatter_class=RawDescriptionHelpFormatter)
 
     parser.add_argument(
@@ -38,7 +38,7 @@ def main():
     parser.add_argument(
         '-a', dest='minimum', type=int, default=0,
         help='minimum count per allele (default=%(default)s)')
-    parser.add_argument('-v', action='version', version=version(parser.prog))
+    parser.add_argument('-v', action='version', version=_info)
 
     args = parser.parse_args()
 

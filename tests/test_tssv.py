@@ -6,7 +6,7 @@ from tssv.tssv import parse_library
 
 class TestTSSV(object):
     """Test the annotation CLI."""
-    def setup(self):
+    def setup_method(self):
         self._output = StringIO()
 
     def test_parse_library(self):

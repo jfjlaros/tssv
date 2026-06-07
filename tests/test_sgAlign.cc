@@ -5,9 +5,11 @@
 /*
  * Private function prototypes.
  */
-void _initMatrix(int *, int, int, int);
-void _align(int *, int, int, char *, char *, int);
-alignment _findMin(int *, int, int);
+void initMatrix_(int *const, size_t const, size_t const, int const);
+void align_(
+  int *const, size_t const, size_t const,
+  char const *const, char const *const, int const);
+Alignment findMin_(int const *const, size_t const, size_t const);
 
 
 TEST_CASE("Internal alignment function", "[matrix]") {
@@ -15,29 +17,28 @@ TEST_CASE("Internal alignment function", "[matrix]") {
 }
 
 TEST_CASE("Initialise matrix", "[matrix]") {
-  int *matrix = (int *)malloc(100 * sizeof(int)),
-      (*_matrix)[10] = (int (*)[10])matrix;
+  int *const matrix = (int *const)malloc(100 * sizeof(int));
+  int (*const matrix_)[10] = (int (*const)[10])matrix;
 
-  _initMatrix(matrix, 10, 10, 1);
-  REQUIRE(_matrix[0][0] == 0);
-  REQUIRE(_matrix[1][0] == 0);
-  REQUIRE(_matrix[9][0] == 0);
-  REQUIRE(_matrix[0][1] == 1);
-  REQUIRE(_matrix[0][9] == 9);
+  initMatrix_(matrix, 10, 10, 1);
+  REQUIRE(matrix_[0][0] == 0);
+  REQUIRE(matrix_[1][0] == 0);
+  REQUIRE(matrix_[9][0] == 0);
+  REQUIRE(matrix_[0][1] == 1);
+  REQUIRE(matrix_[0][9] == 9);
 
-  _initMatrix(matrix, 10, 10, 3);
-  REQUIRE(_matrix[0][0] == 0);
-  REQUIRE(_matrix[1][0] == 0);
-  REQUIRE(_matrix[9][0] == 0);
-  REQUIRE(_matrix[0][1] == 3);
-  REQUIRE(_matrix[0][9] == 27);
+  initMatrix_(matrix, 10, 10, 3);
+  REQUIRE(matrix_[0][0] == 0);
+  REQUIRE(matrix_[1][0] == 0);
+  REQUIRE(matrix_[9][0] == 0);
+  REQUIRE(matrix_[0][1] == 3);
+  REQUIRE(matrix_[0][9] == 27);
 }
 
 TEST_CASE("Alignment", "[matrix]") {
-  alignment a = align(
-      (char *)"GCCAACTGTTACCAAGGTCCCTCCCATGCATGCTGCTCCCTACAGAGGCATGTGCACAGT",
-      (char *)"CTGTTTCCAAGG",
-      1);
+  Alignment a = align(
+      "GCCAACTGTTACCAAGGTCCCTCCCATGCATGCTGCTCCCTACAGAGGCATGTGCACAGT",
+      "CTGTTTCCAAGG", 1);
 
   REQUIRE(a.distance == 1);
 }

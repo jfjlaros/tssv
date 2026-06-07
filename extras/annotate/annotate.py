@@ -44,7 +44,7 @@ def annotate(alleles_handle, reference, report_handle, minimum):
         lambda x: x.strip('\n').split('\t'), alleles_handle.readlines()[1:]))
     for i in data:
         allele_description = req_get(
-            'https://mutalyzer.nl/json/descriptionExtract?' +
+            'https://v2.mutalyzer.nl/json/descriptionExtract?' +
             'reference={}&observed={}'.format(reference, i[0])).json()
         encountered = list(map(int, (i[1:])))
 
